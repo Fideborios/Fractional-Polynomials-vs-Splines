@@ -1,0 +1,188 @@
+---
+title: "Overview and illustration of methods to investigate effect modification across
+  a continuous covariate"
+author: "Michail Belias"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{bbm}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage[table]{xcolor}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+output:
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
+ indent: true  
+ pdf_document:
+  fig_caption: yes 
+  fig_height: 8
+  fig_width: 8
+ html_document:
+  df_print: paged
+csl: Style and bibliography/journal-of-clinical-epidemiology.csl
+fontsize: 14pt 
+sansfont : GFS Neohellenic
+bibliography: Style and bibliography/bibliography2.bib
+---
+
+
+```{r global_options , echo=FALSE, message=FALSE, warning= FALSE}
+rm(list=ls()) ### To clear namespace
+## Fractional Polynomials
+## Load data-set
+if(!require("readr")) install.packages("readr")
+## Load ggplot2 for plotting
+if(!require("ggplot2")) install.packages("ggplot2")
+## Load gridExtra for fine tuning
+if(!require("gridExtra")) install.packages("gridExtra")
+## Load knitr for fine tuning
+if(!require("knitr")) install.packages("knitr")
+## Load haven for fine tuning
+if(!require("haven")) install.packages("haven")
+## Load dplyr
+if(!require("dplyr")) install.packages("dplyr")
+## Load lme4 for lme4
+if(!require("lme4")) install.packages("lme4")
+## Load lme4 for lme4
+if(!require("pander")) install.packages("pander")
+## Load lme4 for lme4
+if(!require("kableExtra")) install.packages("kableExtra")
+## Load lme4 for lme4
+if(!require("magick")) install.packages("magick")
+## Load lme4 for lme4
+if(!require("dplyr")) install.packages("dplyr")
+## Load glmertree for glmm trees modeling
+if(!require("glmertree")) install.packages("glmertree")
+## Load GGally for better ggplot2 manipulation
+if(!require("GGally")) install.packages("GGally")
+
+
+opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
+        echo=F, warning=FALSE, message=FALSE, fig.pos = "H", comment = "")
+options(knitr.table.format = "html")
+
+
+Sys.setenv(PATH=paste(Sys.getenv("PATH"),"C:/Program Files/MiKTeX 2.9/miktex/bin/x64/",sep=";"))
+
+```
+
+
+# Abstract (116 out of 200 words)
+
+# Objective 
+
+To overview and illustrate a variety of tree-based and regression-based approaches to detect and model effect-modification in meta-analysis(MA) of individual participant data(IPD): covariate-centred IPD-MA, mixed effects fractional polynomials, splines, meta-stepp and glmm-trees.
+
+##  Study Design and Setting
+
+We applied the aforementioned approaches into two empirical data-sets. The first is investigating the effect of somatostatin treatment versus placebo in liver reduction percentage, on participants with polycystic liver disease. The second investigates the effect of antibiotics in fever/earpain reduction, on children with acute otitis media(AOM).
+
+## Results
+Non-linear association was detected in AOM IPD-MA. 
+
+
+## Conclusion
+
+We conclude that subgroup detection in IPD-MA requires careful choice of assumptions and modelling. Effect modification may be distorted by a non-linear association if left unadjusted. 
+
+
+
+\newpage
+
+##### 
+
+# 1. Introduction
+
+
+\par      Individual participant data meta-analysis (IPD-MA) is a type of systematic review, where data gathered from multiple studies are combined and analysed centrally. The capability to standardise subgroup definitions and outcomes across studies, the increased power to investigate other than linear associations, the increased validity and reliability of the subgroups and the flexibility to search for subgroups based on combinations of patient and/or disease characteristics are some of the benefits of using IPD of multiple trials rather than traditional (aggregate) meta-analysis. A vivid field of research towards personalized healthcare is the investigation of subgroup effects. For this task, IPD-MA is considered a gold standard as single trials rarely have sufficient power to identify relevant effect modification. 
+\par      Effect modification is known to be present in both categorical and/or continuous covariates. For example, differences in the treatment effect may be present between smokers and non-smokers. In this case, subgroups are already defined and therefore, only hypothesis testing may be conducted. The investigation of subgroup effects is typically conducted using statistical tools, such as t-tests, contingency tables or fitting an appropriate generalised linear model (GLM) with interaction terms included. On the other hand, effect modification across a continuous covariate may be more challenging.  A commonly applied method is to categorize the continuous covariate. This method has been criticised for misspecification, loss of information and power, inflation of the type I error rate, when adjusting for confounding and biased results [@Royston_2005 ; @Altman_2006 ; @Austin_2004 ; @Maxwell_1993 ; @Weinberg_1995]. Another common practice is to assume linearity over the link function, a method that may also lead to deterioration of power, misspecification and even spurious results [@J_rgensen_2016]. Therefore, along with the confirmation of a variable as an  effect modifier, we may have to the explore the functional form of the outcome-effect modifier association also. Furthermore, clinical desicions are based in cut-points in which the treatment effect is altered. These cut-points may be altered if the outcome-effect modifier functional form is misspecified. 
+\par      IPD-MA using regression-based techniques, may be conducted either in one or two stages. In two-stage IPD-MA, each trial is first analysed separately, using an appropriate statistical model. For instance, the first stage may estimate the main treatment effect, or the treatment-covariate interaction effect. Subsequently, these effects are combined into a summary estimate in the second stage of the meta-analysis. For instance, subgroup effects may be investigated by modelling the association of the estimated main treatment effect with a trial-level covariate (meta-regression) or by pooling the interaction terms estimated in the first stage (two-stage meta-analysis of interaction terms). Meta-regression and per-subgroup meta-analysis have been critisized for lack of power and biased results [@Simmonds_2007, @Fisher_2017, @Fisher_2011], in subgroups effects investigation. Therefore, we will only consider two-stage meta-analysis of interaction terms.
+\par      In one-stage IPD-MA, all IPD from every trial are analysed simultaneously whilst accounting for the clustering of participants within studies. Hereby, researchers may model interactions between treatment and patient-level covariates either directly (naive one-stage IPD-MA), or after the covariates are mean-centred per study in order to account for potential ecological bias (centred one-stage IPD-MA). *Clustering can be also accounted using stratified, fixed or random intercept and/slopes [@Legha_2018]* Finally, state of the art plot and tree-based methods are developed for subgroup effects investigation. Generalized linear mixed-effects model trees(glmertree) introduced by Fokkema et al.[@Fokkema_2017] is accounting for non-linear associations, while also adjusting for within studies clustering. Meta-stepp is a plot based moving average method that approximates non-linear effects from clustered data [@Wang_2016]. 
+
+\par
+  It is often unclear when each method should be preferred. Also, it is unclear if the treatment effect function [@Royston_2008] or interaction term analysis [@Sun_2010] is most appropriate and when. We aim to describe and illustrate the aforementioned methods. For that task, we will use both regression based approaches such as meta-stepp, centred one-stage IPD-MA, mixed effects fractional polynomials and splines, and tree based approaches such as generalized linear mixed-effects model trees.
+
+# 2. Methods
+## 2.1 Data-sets 
+
+We used 2 empirical IPD-sets. The first data-set [@Rovers_2006] was investigating the effect of antibiotics in acute otitis media on children aged from 0 to 12 years old. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no). Rovers et al. concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were also investigated separately for potential effect modification and only bilateral acute otitis media showed a significant result.
+
+The second data-set [@Gevers_2013] was investigating the effect of somatostatin in the liver volume reduction. Gevers et al. collected IPD from 3 randomized placebo-controlled trials with a total of 107 participants. The outcome was continuous (liver volume reduction) and age, sex, baseline liver volume, and diagnosis of autosomal dominant polycystic liver or kidney disease has been investigated for effect modification. Gevers et al. concluded that therapy using somatostatin was more beneficial for young female patients. One of the included trials [Caroli et al.] had a cross-over design, threfore participants were in both treatment groups (control and treated) in different time periods. We matched the participants per age and gender and picked half on the treated and half on the control group. Therefore some differences between our results and those reported in the original article may occur.
+
+## 2.2 Statistical approaches
+## 2.2.1 Recurcive partitioning methods (tree based)
+### Generalised Linear Mixed Model Trees (glmm or glmer trees)
+
+Generalised linear mixed model trees is a state of the art technique, proposed by Fokkema et al [@Fokkema_2017] for the detection of treatment-effect modifier interaction. The algorithm is based on model-based recursive partitioning [@Zeileis_2008;  @Su_2009] typically applied, while also taking into account the clustered structure of datasets.
+
+The GLMM tree algorithm:
+
+(1) fit the parametric model to the dataset, 
+(2) statistically test for parameter instability with respect to each of a set of partitioning variables, 
+(3) if there is some overall parameter instability, split the dataset with respect to the variable associated with the highest instability,
+(4) repeat the procedure in each of the resulting subgroups.
+
+
+## 2.2.2Regression based methods
+
+### Two-stage meta-analysis of interaction terms
+`r opts_knit$get("rmarkdown.pandoc.to")`
+In meta-analysis of interaction terms (MA-IT), the interaction between the potential effect modifier and treatment is directly modelled per trial. The statistical model per trial j is as follows:
+
+$g(Y_{ij}) = \beta_{0j} + \beta_{Tj} \times Treatment  + \beta_{Aj} \times f(Age)  + \beta_{xj} \times Treatment \times f(Age) )$
+
+Subsequently, an inverse variance weighted average of $\beta_{xj}$ is calculated. 
+
+## Centered One-stage IPD-MA
+
+We follow recent recomendations [@Hua_2016, @Legha_2018 ] and centre per trial the effect modifier. This way we separate the within and across trial information. 
+
+$g(Y_{ij}) = \beta_{0j} + \beta_{Tj} \times Treatment  + \beta_{Aj} \times( Age - \bar{Age})   + \beta_{xj} \times Treatment \times ( Age - \bar{Age}))$
+
+mixed
+
+$\beta_{0j} \sim N(\beta_{0}, \tau_{0}^2)$
+
+$\beta_{Tj} \sim N(\beta_{T}, \tau_{T}^2)$
+
+$\beta_{Aj} \sim N(\beta_{A}, \tau_{A}^2)$
+
+$\beta_{xj} \sim N(\beta_{x}, \tau_{x}^2)$
+
+
+## Mixed effect fractional polynomials
+
+We follow recent recomendations [@Hua_2016, @Legha_2018 ] and centre per trial the effect modifier. This way we separate the within and across trial information. 
+
+$g(Y_{ij}) = \beta_{0j} + \beta_{Tj} \times Treatment  + \beta_{Aj} \times f( Age - \bar{Age})   + \beta_{xj} \times Treatment \times f( Age - \bar{Age}))$
+
+mixed
+
+$\beta_{0j} \sim N(\beta_{0}, \tau_{0}^2)$
+
+$\beta_{Tj} \sim N(\beta_{T}, \tau_{T}^2)$
+
+$\beta_{Aj} \sim N(\beta_{A}, \tau_{A}^2)$
+
+$\beta_{xj} \sim N(\beta_{x}, \tau_{x}^2)$
+
+
+
+##### 
+# References
+
+
+
+
