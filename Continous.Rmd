@@ -166,7 +166,7 @@ $\beta_{xj} \sim N(\beta_{x}, \tau_{x}^2)$
 
 We follow recent recomendations [@Hua_2016, @Legha_2018 ] and centre per trial the effect modifier. This way we separate the within and across trial information. 
 
-$g(Y_{ij}) = \beta_{0j} + \beta_{Tj} \times Treatment  + \beta_{Aj} \times f( Age - \bar{Age})   + \beta_{xj} \times Treatment \times f( Age - \bar{Age}))$
+$g(Y_{ij}) = \beta_{0j} + \beta_{Tj} \times Treatment  + \beta_{Aj} \times fp( Age - \bar{Age})   + \beta_{xj} \times Treatment \times fp( Age - \bar{Age}))$
 
 mixed
 
