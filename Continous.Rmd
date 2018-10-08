@@ -83,7 +83,7 @@ Sys.setenv(PATH=paste(Sys.getenv("PATH"),"C:/Program Files/MiKTeX 2.9/miktex/bin
 
 # Objective 
 
-To overview and illustrate a variety of tree-based and regression-based approaches to detect and model effect-modification in meta-analysis(MA) of individual participant data(IPD): covariate-centred IPD-MA, mixed effects fractional polynomials, splines, meta-stepp and glmm-trees.
+To overview and illustrate a variety of tree-based and regression-based approaches to detect and model effect-modification in meta-analysis(MA) of individual participant data(IPD),such as: covariate-centred IPD-MA, mixed effects fractional polynomials, splines, meta-stepp and glmm-trees.
 
 ##  Study Design and Setting
 
@@ -95,7 +95,7 @@ Non-linear association was detected in AOM IPD-MA.
 
 ## Conclusion
 
-We conclude that subgroup detection in IPD-MA requires careful choice of assumptions and modelling. Effect modification may be distorted by a non-linear association if left unadjusted. 
+We conclude that subgroup detection in IPD-MA requires knowing the underlying assumptions and careful modelling. Effect modification may be distorted by a non-linear association if left unadjusted. 
 
 
 
