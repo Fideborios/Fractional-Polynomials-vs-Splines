@@ -1,0 +1,20 @@
+   ,      , Assumptions made ,      ,       ,       ,,,
+,, Cut-points ,,,,,,
+,, Known ,, Unknown ,,,,
+ Functional form , Known ," Piecewise polynomials
+Categorisation (piecewise intercept) ",,"MFP (treatment effect plot)
+",,,,
+,,,,,,,,
+, Unknown ," Splines 
+MFP ",," GLMM - trees 
+META-STEPP ",,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
+,,,,,,,,
