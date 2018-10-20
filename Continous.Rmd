@@ -23,13 +23,13 @@ header-includes:
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
 output:
- word_document:
-  reference_docx: Style and bibliography/templatePaper.docx
- indent: true  
  pdf_document:
   fig_caption: yes 
   fig_height: 8
   fig_width: 8
+ indent: true  
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
  html_document:
   df_print: paged
 csl: Style and bibliography/journal-of-clinical-epidemiology.csl
@@ -169,8 +169,7 @@ kable_styling(full_width = F) %>%
 column_spec(1, bold = T, width = "10em") %>%
 column_spec(2, width = "10em")%>%
 column_spec(3, width = "6em")%>%
-column_spec(4, width = "10em")%>%
-kable_as_image()
+column_spec(4, width = "10em")
 
 ```
 
