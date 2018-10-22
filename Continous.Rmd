@@ -66,6 +66,17 @@ if(!require("magick")) install.packages("magick")
 if(!require("glmertree")) install.packages("glmertree")
 ## Load GGally for better ggplot2 manipulation
 if(!require("GGally")) install.packages("GGally")
+## Load GGally for better ggplot2 manipulation
+if(!require("readxl")) install.packages("readxl")
+## Load GGally for better ggplot2 manipulation
+if(!require("kableExtra")) install.packages("kableExtra")
+## Load GGally for better ggplot2 manipulation
+if(!require("ggsci")) install.packages("ggsci")
+## Load broom for ggplot2  manipulation
+if(!require("broom")) install.packages("broom")
+## Load broom for ggplot2  manipulation
+if(!require("metafor")) install.packages("metafor")
+if(!require(effects)) install.packages("effects")
 
 
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
@@ -77,7 +88,20 @@ Sys.setenv(PATH=paste(Sys.getenv("PATH"),"C:/Program Files/MiKTeX 2.9/miktex/bin
 
 ```
 
+```{r loading the datasets}
 
+IPDMA <- read_sas("Data/IPDMA.sas7bdat")
+names(IPDMA) <- tolower(names(IPDMA))
+IPDMA$treat =  factor(IPDMA$treat  , labels = c("Placebo","Antibiotics") )
+IPDMA$study = factor(IPDMA$study, labels = c("Damoiseaux","Burke","Appelman","Little","Saux","McCormick"))
+IPDMA$bilat_0 =  factor(IPDMA$bilat_0  , labels = c("No","Yes") )
+
+
+
+
+somatostatin <- read_sav("Data/somatostatin.sav")
+source("Data/somatostatin_descriptives.R")
+```
 # Abstract (116 out of 200 words)
 
 ## Objective 
@@ -114,10 +138,99 @@ A common technique is to categorise the continuous covariate, using some prior k
   It is often unclear when each method should be preferred. It is also unclear if the treatment effect function [@Royston_2008] or interaction term analysis [@Sun_2010] is most appropriate in randomised clinical trials (RCT) meta-analysis framework. We aim to describe and illustrate the aforementioned methods. For that task, we will use both regression-based approaches such as meta-stepp, centred one-stage IPD-MA, mixed effects fractional polynomials and splines, and tree-based approaches such as generalised linear mixed-effects model trees. Although confirmatory and exploratory data analyses are almost never conducted one without the other we wish to point out that we will focus on the exploratory part. For instance, we may explore for potential effect modification and/or functional form of outcome-effect modifier association, or for effect modification on a subgroup, or how many times does the effect change over a continuous variable, and at which cut-points. We will introduce the data and the methods we used in chapter 2 and apply them on real empirical data to illustrated their performance. 
 
 # 2. Data
-
 We use 2 empirical IPD-sets. The first data-set [@Rovers_2006] was investigating the effect of antibiotics in acute otitis media on children aged from 0 to 12 years old. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no). Rovers et al. concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were also investigated separately for potential effect modification and only bilateral acute otitis media showed a significant result.
 
 The second data-set [@Gevers_2013] was investigating the effect of somatostatin in the liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. The outcome was continuous (liver volume reduction) and age, sex, baseline liver volume, and diagnosis of autosomal dominant polycystic liver or kidney disease has been investigated for effect modification. Gevers et al. concluded that therapy using somatostatin was more beneficial for young female patients. One of the included trials [Caroli et al.] had a cross-over design, therefore participants were in both treatment groups (control and treated) in different time periods. We matched the participants per age and gender and picked half on the treated and half on the control group. Therefore, some differences between our results and those reported in the original article may occur.
+
+```{r}
+library(dplyr)
+a = IPDMA %>%
+    group_by(study, treat)%>%
+  summarise(`Number of participants` = n(), 
+            `Age, median [range]` =  paste(round(median(age),2)  , " [" , round(min(age),2), ",",round(max(age),2) ,"]", sep = "" ) ,
+            `Males (%)` = paste(sum(gender) , " (" , paste(round(100*mean(as.numeric(gender))),"%",sep = "") , ")", sep = "" ),
+            `RAOM (%)`= paste(sum(raom) , " (" , paste(round(100*mean(as.numeric(raom))),"%",sep = "") , ")", sep = "" ), 
+            `Sibling (%)`= paste(sum(sibling) , " (" , paste(round(100*mean(as.numeric(sibling))),"%",sep = "") , ")", sep = "" ),
+            `Winter season (%)` =  paste(sum(season) , " (" , paste(round(100*mean(as.numeric(season))),"%",sep = "") , ")", sep = "" ),
+            `Being breastfed (%)`=  paste(sum(breast) , " (" , paste(round(100*mean(as.numeric(breast))),"%",sep = "") , ")", sep = "" ),
+            `Passive smoking (%)` = paste(sum(smoke) , " (" , paste(round(100*mean(as.numeric(smoke))),"%",sep = "") , ")", sep = "" ),
+            `Crying (%)` =paste(sum(cry_0) , " (" , paste(round(100*mean(as.numeric(cry_0))),"%",sep = "") , ")", sep = "" ),
+            `Runny nose (%)`=paste(sum(rnose_0) , " (" , paste(round(100*mean(as.numeric(rnose_0))),"%",sep = "") , ")", sep = "" ),
+            `Ear pain (%)` = paste(sum(pain_0) , " (" , paste(round(100*mean(as.numeric(pain_0))),"%",sep = "") , ")", sep = "" ),
+             `Fever (%)` = paste(sum(fever_0) , " (" , paste(round(100*mean(as.numeric(fever_0))),"%",sep = "") , ")", sep = "" ),
+            `Otorrhoea (%)` = paste(sum(oto_0) , " (" , paste(round(100*mean(as.numeric(oto_0))),"%",sep = "") , ")", sep = "" ),
+            `Red tympanic membrane (%)` = paste(sum(tmcol_0) , " (" , paste(round(100*mean(as.numeric(tmcol_0))),"%",sep = "") , ")", sep = "" ),
+            `Bulging tympanic membrane (%)` = paste(sum(tmbul_0) , " (" , paste(round(100*mean(as.numeric(tmbul_0))),"%",sep = "") , ")", sep = "" ))
+
+
+final=t(a[,3:17])
+colnames(final) = rep(c("Placebo","Antibiotics"),6)
+#%>%
+  #kable_as_image()
+if(isTRUE(is_latex_output() || is_html_output() )){
+kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Rovers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    row_spec(2, bold = T, color = "white", background = "#FF6348FF")%>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2) )%>%
+  landscape()
+}else{
+  kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Rovers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    row_spec(2, bold = T, color = "white", background = "#FF6348FF")%>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2) )%>%
+  landscape()%>%
+  kable_as_image()
+  }
+
+```
+
+
+```{r}
+
+b = somatostatin %>%
+    group_by(Study, Drug)%>% 
+    summarise(`Number of participants` = n(), 
+              `Age, median [range]` =  paste(median(Age)  , " [" , min(Age) , ",",max(Age) ,"]", sep = "" ) ,
+              Female = paste(sum(Gender == "Female") , " (" , paste(round(100*mean(as.numeric(Gender == "Female"))),"%",sep = "") , ")", sep = "" ),
+              Male = paste(sum(Gender == "Male") , " (" , paste(round(100*mean(as.numeric(Gender == "Male"))),"%",sep = "") , ")", sep = "" ),
+              ADPKD= paste(sum(Diagnosis == "0") , " (" , paste(round(100*mean(as.numeric(Diagnosis == "0"))),"%",sep = "") , ")", sep = "" ), 
+              PCLD= paste(sum(Diagnosis == "1") , " (" , paste(round(100*mean(as.numeric(Diagnosis == "1"))),"%",sep = "") , ")", sep = "" ),
+              `Liver volume, mL , median [range]` =  paste(median(Base_Liver)  , " [" , min(Base_Liver) , ",",max(Base_Liver) ,"]", sep = "" ))
+
+
+final=t(b[,3:9])
+colnames(final) = rep(c("Placebo","Somatostatin"),3)
+
+if(isTRUE(is_latex_output() || is_html_output() )){
+  kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2) )%>%
+  landscape()
+}else{
+      kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2) )%>%
+  landscape()%>%
+  kable_as_image()
+  }
+```
+
 
 # 3. Methods
 ## 3.1 Notation
@@ -138,6 +251,7 @@ The GLMM tree algorithm:
 (4) repeat the procedure in each of the resulting subgroups.
 
 
+
 ## 3.3 Regression based approaches
 
 We identify 2 assumptions that a researcher may a-priori have. The first is over the functional form the association of the outcome with the continuous covariate have and the second one over the knots known also as cut-offs or knots, where the effect is modified. In this framework, we consider that given the assumptions made we may choose the appropriate analysis to perform. 
@@ -154,8 +268,7 @@ include_graphics("Figs/TypesOfMethods.png")
 ```
 
 ```{r }
-library(readxl)
-library(kableExtra)
+
 MethodsComparison <- read_excel("Figs/MethodsComparison.xlsx")
 MethodsComparison <- as.data.frame(MethodsComparison)
 
@@ -249,18 +362,222 @@ Therefore, the statistical model applied is:
 $g(Y_{ij}) = FP_{1j}(X)  + FP_{2j}(X) \times Treatment$
 
 
-
-
-
-
-
-
-
 \newpage
 
 ##### 
 
 # Results
+
+We illustrate the results of the aforementioned approaches by ascending order of assumptions made. Therefore, we will start with the tree-based approach and smoothing spline, as we believe that these should be the first "exploratory" steps. We increased the level of significance, due to small sample size per trial. 
+
+
+```{r lmer tree somatostatin }
+tree  = lmertree(dif_liver_perc~Drug |(Drug| Study) | Age + Gender  , alpha=0.3,
+               data = somatostatin, lmer.control = lmerControl(calc.derivs = F))
+plot(tree, which = "tree",main = "Gevers et al")
+``` 
+
+We show that there is a difference between the average outcomes of male and females. This difference seems to emanate from young women ($\leq$ 46 years). 
+
+
+```{r glmer tree AOM }
+tree  = glmertree(poutcome ~treat |(1| study) | bilat_0 + age+  gender,
+                  family = binomial("log"),
+                  alpha=0.17, data = IPDMA)
+plot(tree, which = "tree",main = "Rovers et al")
+
+```
+
+On the Gevers et al. dataset we show that age is a potential effect modifier and we may also have a tree-way interaction with bilateral otitis.
+
+
+*Two-stage smoothing splines*
+
+In contrast with linear regression models, in nonlinear models we cannot interpret the shape of the regression line from the summary. Therefore, visualization is an important tool for interpretating nonlinear regression models. Here a selection of visualization functions is summarized. Detailed information on the functions and examples are found in the help files of each function.
+
+
+
+```{r message=FALSE}
+library(mgcv)
+library(itsadug)
+# Note: this is really not the best fitting model for the data:
+m1 <- bam(poutcome ~ bilat_0 * treat*age + s(age)  + s(age, study, bs='fs', m=2, k=5), data=IPDMA, discrete=TRUE, family = binomial("log"))
+
+par(mfrow=c(2,1), cex=0.75)
+
+# version 2:
+plot_smooth(m1, view="age", cond=list(bilat_0="Yes",treat ="Antibiotics"), rm.ranef=TRUE, rug=FALSE, col="red")
+plot_smooth(m1, view="age", cond=list(bilat_0="Yes",treat ="Placebo"), rm.ranef=TRUE, rug=FALSE, col="blue", add = T)
+# version 2:
+plot_smooth(m1, view="age", cond=list(bilat_0="No",treat ="Antibiotics"), rm.ranef=TRUE, rug=FALSE, col="red")
+plot_smooth(m1, view="age", cond=list(bilat_0="No",treat ="Placebo"), rm.ranef=TRUE, rug=FALSE, col="blue", add = T)
+
+
+```
+
+*Two-stage GLMs*
+
+In two-stage meta-analysis of interaction terms using linear assumptions, effect modification across age was not statistically significant. 
+
+```{r drawing the continuous outcome plot}
+
+df = somatostatin%>%
+  group_by(Study)%>%
+  do(fit = lm(dif_liver_perc~ Drug *Age, data = .))
+
+
+# get the coefficients by group in a tidy data_frame
+df_two_stage = tidy(df, fit)
+
+###
+Interactions =  df_two_stage[which(df_two_stage$term == "Drugsomatostatin:Age"),]
+forest(rma(data = Interactions, yi = estimate, sei = std.error, slab = Study) )
+
+```
+
+*One-stage IPD-MA (linear assumption)*
+
+```{r}
+
+lmLinear <- lmer(dif_liver_perc ~ Drug * Age*Gender + (Drug|Study) + (1|Study) , data = somatostatin , control = lmerControl(calc.derivs = F))
+
+
+IPDMA$bilateral = factor(IPDMA$bilat_0 , labels = c("Unilateral acute otitis","Bilateral acute otitis" ),  levels = c("No","Yes") )
+glmLinear <- glmer(poutcome ~ treat * age*bilateral + (treat|study) + (1|study) , family = binomial("log"),data = IPDMA , control = glmerControl(calc.derivs = F))
+
+summary(lmLinear)
+summary(glmLinear)
+
+effect.boundaries =  data.frame(effect(c("Age","Drug","Gender"),lmLinear, xlevels=70))
+glm.effect.boundaries =  data.frame(effect(c("age","treat","bilateral"),glmLinear, xlevels=100))
+
+
+ggplot() + 
+  geom_point(somatostatin, mapping = aes(y= dif_liver_perc, x = Age, color =Drug)) + 
+  scale_x_continuous(breaks = seq(from = 30, to = 70, by = 5))+ facet_grid(.~Gender)+
+  theme_bw() +
+  theme(legend.key = element_blank()) + ggtitle("Liver difference over age") +
+  theme(plot.title = element_text(hjust = 0.5)) +   
+  geom_line(effect.boundaries,mapping = aes(y= fit, x = Age,  color= Drug))+
+  geom_ribbon(data = effect.boundaries,aes(ymin=lower, ymax=upper,y= fit, x = Age,  
+                                           fill= Drug), alpha=0.2) +
+  scale_color_lancet()+scale_fill_lancet()
+
+ggplot() + 
+  geom_point( subset(IPDMA, !is.na(bilateral)), mapping = aes(y= poutcome, x = age, color =treat, fill=treat)) + 
+  scale_x_continuous(breaks = seq(from = 0, to = 13, by = 2))+ facet_grid(.~bilateral)+
+  theme_bw() + xlab("Probability  of having fever after 3/7 days") +
+  theme(legend.key = element_blank()) + ggtitle("Fever probability across age") +
+  theme(plot.title = element_text(hjust = 0.5)) +   
+  geom_line(glm.effect.boundaries,mapping = aes(y= fit, x = age,  color= treat))+
+  geom_ribbon(data = glm.effect.boundaries,aes(ymin=lower, ymax=upper,y= fit, x = age,fill= treat), alpha=0.2) +
+  scale_color_lancet()+scale_fill_lancet()
+
+new.data =  somatostatin%>% 
+  select(c("Study","Drug","Age","Gender"))
+
+
+Female = cbind(effect.boundaries[effect.boundaries$Gender == "Female",])
+
+
+Female.df =data.frame(predicted.difference  =  Female$fit [Female$Drug=="somatostatin"] - Female$fit [Female$Drug=="placebo"]) 
+
+Female.df$se = sqrt(Female$se[Female$Drug=="somatostatin"] + Female$se[Female$Drug=="placebo"])
+Female.df$Gender = rep("Female")
+
+
+Male = cbind(effect.boundaries[effect.boundaries$Gender == "Male",])
+
+Male.df =data.frame(predicted.difference  =  Male$fit [Male$Drug=="somatostatin"] - Male$fit [Male$Drug=="placebo"]) 
+
+Male.df$se = sqrt(Male$se[Male$Drug=="somatostatin"] + Male$se[Male$Drug=="placebo"])
+Male.df$Gender = rep("Male")
+rm(Female,Male)
+
+
+Full =  rbind(Female.df, Male.df)
+
+rm(Female.df,Male.df)
+
+
+new.data =  cbind(Age =effect.boundaries$Age[1:140], Full)
+new.data$upper =  new.data$predicted.difference + 1.96*new.data$se
+new.data$lower =  new.data$predicted.difference - 1.96*new.data$se
+
+
+ggplot(new.data, mapping = aes(y= predicted.difference, x = Age)) + 
+  geom_line() + facet_grid(Gender~.)+
+  scale_x_continuous(breaks = seq(from = 30, to = 70, by = 5))+ 
+  theme_bw() + 
+  theme(legend.key = element_blank()) + ggtitle("Treatment effect (linear)") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_ribbon(data = new.data,aes(ymin=lower, ymax=upper,y= predicted.difference, x = Age), alpha=0.2) +
+  scale_color_lancet() + geom_hline(yintercept = 0, linetype =3, colour= "purple", size = 1)
+
+rm(lmLinear,effect.boundaries,effect.data.frame, new.data)
+
+
+### For the AOM NOW
+new.data =  IPDMA%>% 
+  select(c("study","treat","age","bilateral"))
+
+
+bilateral = glm.effect.boundaries[glm.effect.boundaries$bilateral == "Bilateral acute otitis",]
+
+
+bilateral.df =data.frame(predicted.difference  =  bilateral$fit [bilateral$treat=="Antibiotics"] - bilateral$fit [bilateral$treat=="Placebo"]) 
+
+bilateral.df$se = sqrt(bilateral$se[bilateral$treat=="Antibiotics"] + bilateral$se[bilateral$treat=="Placebo"])
+bilateral.df$bilat = rep("bilateral")
+
+
+unilateral = glm.effect.boundaries[glm.effect.boundaries$bilateral == "Unilateral acute otitis",]
+
+unilateral.df =data.frame(predicted.difference  =  unilateral$fit [unilateral$treat=="Antibiotics"] - unilateral$fit [unilateral$treat=="Placebo"]) 
+
+unilateral.df$se = sqrt(unilateral$se[unilateral$treat=="Antibiotics"] + unilateral$se[unilateral$treat=="Placebo"])
+unilateral.df$bilat = rep("unilateral")
+rm(bilateral,unilateral)
+
+
+Full =  rbind(bilateral.df,unilateral.df)
+
+rm(bilateral.df,unilateral.df)
+
+
+new.data =  cbind(Age =glm.effect.boundaries$age[1:200], Full)
+new.data$upper =  new.data$predicted.difference + 1.96*new.data$se
+new.data$lower =  new.data$predicted.difference - 1.96*new.data$se
+
+
+ggplot(new.data, mapping = aes(y= predicted.difference, x = Age)) + 
+  geom_line() + facet_grid(bilat~.)+
+  scale_x_continuous(breaks = seq(from = 30, to = 70, by = 5))+ 
+  theme_bw() + 
+  theme(legend.key = element_blank()) + ggtitle("Treatment effect (linear)") +
+  theme(plot.title = element_text(hjust = 0.5))+
+  geom_ribbon(data = new.data,aes(ymin=lower, ymax=upper,y= predicted.difference, x = Age), alpha=0.2) +
+  scale_color_lancet() + geom_hline(yintercept = 0, linetype =3, colour= "purple", size = 1)
+
+rm(glmLinear,glm.effect.boundaries, new.data,Full)
+
+```
+
+
+
+
+```{r table acute otitis media}
+
+
+ggplot(IPDMA, aes(x=age, y=poutcome, color= treat)) + geom_point() + 
+  stat_smooth(method="glm", method.args=list(family="binomial"), se=FALSE) + xlim(c(-1,15))+ scale_color_lancet() + 
+  labs(title = "Scatterplot of AOM data-set",y = "Fever/Pain after 3/7 days probability ",x = "Age")
+
+```
+
+
+
+
 
 
 \newpage
