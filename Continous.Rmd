@@ -451,19 +451,39 @@ forest(rma(data = Interactions, yi = estimate, sei = std.error, slab = Study) )
 ```
 
 For the Gevers et al the two-stage meta-analysis of interaction terms showed no statistically significant. 
+
 ```{r drawing the continuous outcome plot}
 
 df = IPDMA%>%
   group_by(study)%>%
-  do(fit = glm(poutcome~ treat *age + treat*age^2, data = .))
+  do(fit = glm(poutcome~ treat *age + treat*I(age^2), data = .))
 
 
 # get the coefficients by group in a tidy data_frame
 df_two_stage = tidy(df, fit)
 
+
+
+
+
+
+df_two_stage%>%
+  gather(study, estimate)
+  
+
 ###
-Interactions =  df_two_stage[which(df_two_stage$term == "Drugsomatostatin:Age"),]
-forest(rma(data = Interactions, yi = estimate, sei = std.error, slab = Study) )
+Interactions1 =  df_two_stage[which(df_two_stage$term == "treatAntibiotics:age"),]
+Interactions2 =  df_two_stage[which(df_two_stage$term == "treatAntibiotics:I(age^2)"),]
+
+
+model <- mvmeta(cbind(Interactions1,Interactions2),S,data=hsls,method="mm")
+summary(model)
+
+
+par(mfrow= c(1,2))
+forest(rma(data = Interactions1, yi = estimate, sei = std.error, slab = study) )
+forest(rma(data = Interactions2, yi = estimate, sei = std.error, slab = study) )
+
 
 ```
 
