@@ -521,15 +521,27 @@ lmLinear <- lmer(dif_liver_perc ~ Drug * Age*Gender + (Drug|Study) + (1|Study) ,
 
 
 IPDMA$bilateral = factor(IPDMA$bilat_0 , labels = c("Unilateral acute otitis","Bilateral acute otitis" ),  levels = c("No","Yes") )
-glmLinear <- glmer(poutcome ~ treat * age*bilateral + (treat|study) + (1|study) , 
+glmLinear <- glmer(poutcome ~ treat * poly(age)*bilateral + (treat|study) + (1|study) , 
                    family = binomial("log"),data = IPDMA )
 ```
 
 
 ```{r}
-summary(lmLinear)
 
-summary(glmLinear)
+out <- summary(lmLinear)$coef
+
+row.names(out) <- c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
+kable(out, format = "pandoc")
+
+
+
+
+out <- summary(glmLinear)$coef
+
+row.names(out) <- c("Intercept","Treatment","Age","Age^2","Treatment x Age","Treatment x Age^2")
+kable(out, format = "pandoc")
+
+
 ```
 
 
