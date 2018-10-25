@@ -297,8 +297,7 @@ MethodsComparison[is.na(MethodsComparison)] <-  ""
 
 
 kable(MethodsComparison, caption = "Characteristics of the methods",  format = "latex", booktabs = T )%>%
-kable_styling(latex_options = c("striped", "scale_down"))%>%
-kable_styling(full_width = F) %>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
 column_spec(1, bold = T, width = "10em") %>%
 column_spec(2, width = "10em")%>%
 column_spec(3, width = "6em")%>%
@@ -384,23 +383,32 @@ $g(Y_{ij}) = FP_{1j}(X)  + FP_{2j}(X) \times Treatment$
 
 # Results
 
-We illustrate the results of the aforementioned approaches by ascending order of assumptions made. Therefore, we will start with the tree-based approach and smoothing splines, as we believe that these should be the first "exploratory" steps. In the Gevers et al. data-set we increased the level of significance for the leme, due to small sample size per trial. 
+We will illustrate the results of the aforementioned approaches by ascending order of assumptions made. Therefore, we will start with the tree-based approach and smoothing splines, as we believe that these should be the first "exploratory" steps. In the Gevers et al. data-set we increased the level of significance for the leme, due to small sample size per trial. 
 
 
-```{r lmer tree Somatostatin  }
-tree  = lmertree(dif_liver_perc~Drug |(Drug| Study) | Age + Gender  , alpha=0.3,
+```{r lmer tree Somatostatin, eval=FALSE  }
+tree  = lmertree(dif_liver_perc~Drug |(1| Study) | Age + Gender  , alpha=0.3,
                data = somatostatin, lmer.control = lmerControl(calc.derivs = F))
 plot(tree, which = "tree",main = "Gevers et al")
 ``` 
 
+
+```{r, out.height="80%", out.width="80%"}
+include_graphics("Figs/SomatostatinTree.png")
+```
+
 We show that there is a difference between the average outcomes of male and females. This difference seems to emanate from young women ($\leq$ 46 years). 
 
-```{r glmer tree AOM }
+```{r glmer tree AOM , eval=FALSE }
 tree  = glmertree(poutcome ~treat |(1| study) | bilat_0 + age+  gender,
                   family = binomial("log"),
                   alpha=0.17, data = IPDMA)
 plot(tree, which = "tree",main = "Rovers et al")
 
+```
+
+```{r, out.height="80%", out.width="80%"}
+include_graphics("Figs/AOMTree.png")
 ```
 
 On the Rovers et al. dataset we show that age is a potential effect modifier and we may also have a tree-way interaction with bilateral otitis.
@@ -427,67 +435,79 @@ plot_smooth(m1, view="age", cond=list(bilat_0="No",treat ="Placebo"), rm.ranef=T
 
 ```
 
-*Two-stage Global polynomials*
+*Two-stage Global polynomials (coefficient pooling)*
 
+For the Gevers et al. data-analysis, we assumed a linear functional form, as we had limited data (108 observations) and spending $2 \times p$ (degree of polynomial) $\times  J$ (trial number) was considered unefficient. Furthemore, the initial pooled plot showed no significant non-linearity. In contrast, for the Rovers et al. we observed an overall quadratic shape. Damoiseaux et al. had age rounded and the participants were only 1 and 2 years old children. To avoid non-convergance of the log-binomial models we created a slight artificial deviation using the **jitter()** command.
 
-For the Gevers et al. data-analysis, we assumed a linear functional form, as we had limited data (108 observations) and spending $2 \times p$ (degree of polynomial) per trial j was considered unefficient. Furthemore, the initial pooled plot showed no significant non-linearity. In contrast, for the Rovers et al. we observed a quadratic shape and used it as prior knowledge.
+In two-stage meta-analysis using linear assumptions, effect modification across age was not statistically significant. 
 
-In two-stage meta-analysis of interaction terms using linear assumptions, effect modification across age was not statistically significant. 
+```{r Gasparini approach with mvmeta  for somatostatin}
+library(mvmeta)
+# BUILT OBJECTS WHERE RESULTS WILL BE STORED:
+#   ymat IS THE MATRIX FOR THE OUTCOME PARAMETERS
+#   Slist IS THE LIST WITH (CO)VARIANCE MATRICES
+ymat <- matrix(NA,length(unique(somatostatin$Study)),
+               8,dimnames=list(unique(somatostatin$Study),c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")))
+Slist <- vector("list",length(unique(somatostatin$Study)))
+names(Slist) <- unique(somatostatin$Study)
 
-```{r drawing the continuous outcome plot}
+for(i in unique(somatostatin$Study)) {
+    
+    # LOAD study
+    data <- somatostatin[somatostatin$Study == i ,]
+    
+    # RUN THE MODEL
+    model <- lm(dif_liver_perc~ Drug *Age*Gender, data = data)
+    
+    # EXTRACT AND SAVE THE RELATED COEF AND VCOV
+    ymat[i,] <- model$coefficients
+    Slist[[i]] <- vcov(model)
+  }
 
-df = somatostatin%>%
-  group_by(Study)%>%
-  do(fit = lm(dif_liver_perc~ Drug *Age, data = .))
+out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 
-
-# get the coefficients by group in a tidy data_frame
-df_two_stage = tidy(df, fit)
-
-###
-Interactions =  df_two_stage[which(df_two_stage$term == "Drugsomatostatin:Age"),]
-forest(rma(data = Interactions, yi = estimate, sei = std.error, slab = Study) )
-
-```
-
-For the Gevers et al the two-stage meta-analysis of interaction terms showed no statistically significant. 
-
-```{r drawing the continuous outcome plot}
-
-df = IPDMA%>%
-  group_by(study)%>%
-  do(fit = glm(poutcome~ treat *age + treat*I(age^2), data = .))
-
-
-# get the coefficients by group in a tidy data_frame
-df_two_stage = tidy(df, fit)
-
-
-
-
-
-
-df_two_stage%>%
-  gather(study, estimate)
-  
-
-###
-Interactions1 =  df_two_stage[which(df_two_stage$term == "treatAntibiotics:age"),]
-Interactions2 =  df_two_stage[which(df_two_stage$term == "treatAntibiotics:I(age^2)"),]
-
-
-model <- mvmeta(cbind(Interactions1,Interactions2),S,data=hsls,method="mm")
-summary(model)
-
-
-par(mfrow= c(1,2))
-forest(rma(data = Interactions1, yi = estimate, sei = std.error, slab = study) )
-forest(rma(data = Interactions2, yi = estimate, sei = std.error, slab = study) )
-
+row.names(out) <- c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
+kable(out, format = "pandoc")
 
 ```
 
-While for the Rovers et al we 
+For the Gevers et al the two-stage meta-analysis of interaction terms showed no statistically significant results. 
+
+```{r Gasparini approach with mvmeta  for AOM}
+
+# BUILT OBJECTS WHERE RESULTS WILL BE STORED:
+#   ymat IS THE MATRIX FOR THE OUTCOME PARAMETERS
+#   Slist IS THE LIST WITH (CO)VARIANCE MATRICES
+ymat <- matrix(NA,length(unique(IPDMA$study)),
+               6,dimnames=list(unique(IPDMA$study),c("Intercept","Treatment","Age","Age^2","Treatment x Age","Treatment x Age^2")))
+
+
+Slist <- vector("list",length(unique(IPDMA$study)))
+names(Slist) <- unique(IPDMA$study)
+
+for(i in unique(IPDMA$study)) {
+    
+    # LOAD study
+    data <- IPDMA[IPDMA$study == i ,]
+    if( i == "Damoiseaux") data$age =  jitter(data$age)
+    data$Agesq =  (data$age)^2
+    # RUN THE MODEL
+    model <- glm(poutcome ~ treat * age + treat *Agesq  , 
+                 family = binomial("log"), data)
+    
+    # EXTRACT AND SAVE THE RELATED COEF AND VCOV
+    ymat[i,] <- model$coefficients
+    Slist[[i]] <- vcov(model)
+  }
+
+out <- summary(mvmeta(ymat, Slist,method = "reml" ))$coef
+
+row.names(out) <- c("Intercept","Treatment","Age","Age^2","Treatment x Age","Treatment x Age^2")
+kable(out, format = "pandoc")
+
+```
+
+
 
 
 
@@ -495,11 +515,14 @@ While for the Rovers et al we
 
 ```{r}
 
-lmLinear <- lmer(dif_liver_perc ~ Drug * Age*Gender + (Drug|Study) + (1|Study) , data = somatostatin , control = lmerControl(calc.derivs = F))
+lmLinear <- lmer(dif_liver_perc ~ Drug * Age*Gender + (Drug|Study) + (1|Study) ,
+                 data = somatostatin , 
+                 control = lmerControl(calc.derivs = F))
 
 
 IPDMA$bilateral = factor(IPDMA$bilat_0 , labels = c("Unilateral acute otitis","Bilateral acute otitis" ),  levels = c("No","Yes") )
-glmLinear <- glmer(poutcome ~ treat * age*bilateral + (treat|study) + (1|study) , family = binomial("log"),data = IPDMA )
+glmLinear <- glmer(poutcome ~ treat * age*bilateral + (treat|study) + (1|study) , 
+                   family = binomial("log"),data = IPDMA )
 ```
 
 
@@ -511,8 +534,8 @@ summary(glmLinear)
 
 
 
-```{r}
-effect.boundaries =  data.frame(effect(c("Age","Drug","Gender"),lmLinear, xlevels=70))
+```{r plots of one-stage IPD-MA}
+effect.boundaries =  data.frame(effect(c("Age","Drug","Gender"),lmLinear, xlevels=100))
 glm.effect.boundaries =  data.frame(effect(c("age","treat","bilateral"),glmLinear, xlevels=100))
 
 
@@ -630,7 +653,7 @@ rm(glmLinear,glm.effect.boundaries, new.data,Full)
 
 
 
-```{r table acute otitis media}
+```{r table acute otitis media, eval=FALSE}
 
 
 ggplot(IPDMA, aes(x=age, y=poutcome, color= treat)) + geom_point() + 
