@@ -23,13 +23,13 @@ header-includes:
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
 output:
- word_document:
-  reference_docx: Style and bibliography/templatePaper.docx
- indent: true  
  pdf_document:
   fig_caption: yes 
   fig_height: 8
   fig_width: 8
+ indent: true  
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
  html_document:
   df_print: paged
 csl: Style and bibliography/journal-of-clinical-epidemiology.csl
@@ -121,7 +121,7 @@ To give an overview and illustrate a variety of tree-based and regression-based 
 
 We applied the approaches on two empirical examples. In the first we investigate possible modification of the effect of Somatostatin  on liver reduction in participants with polycystic liver disease, in the second effect modification of antibiotics on fever/ear-pain reduction in children with acute otitis media.
 
-## Results
+## 4. Results
 Non-linear association was detected in AOM IPD-MA. 
 
 
@@ -430,7 +430,8 @@ In contrast with linear regression models, in nonlinear models we cannot interpr
 ```{r Two-Stage smoothing splines in Somatostatin, message=FALSE, warning=FALSE }
 
 # Note: this is really not the best fitting model for the data:
-m1 <- bam(dif_liver_perc ~ Drug * Age*Gender + s(Age) + s(Age, Study, bs='fs', m=2, k=5) + s(Drug,Study, bs = "re")+ s(Gender,Study, bs = "re")+  s(Study, bs = "re") , data = somatostatin ,  discrete=TRUE)
+m1 <- bam(dif_liver_perc ~ Drug * Age*Gender + s(Age)  + s(Study,Drug,Gender, bs = "re") , data = somatostatin,
+          method="REML" ,  discrete=TRUE)
 
 
 par(mfrow=c(2,1), cex=0.75)
@@ -452,8 +453,7 @@ In the acute otitis media data-set we show that children 0-5 years have a treatm
 ```{r Two-Stage smoothing splines in AOM, message=FALSE, warning=FALSE }
 
 # Note: this is really not the best fitting model for the data:
-m1 <- bam(poutcome ~ bilat_0 * treat*age + s(age)  + s(age, study, bs='fs', m=2, k=5) + s(treat,study, bs = "re")+ 
-            s(study, bs = "re"), data=IPDMA, discrete=TRUE, family = binomial("log"))
+m1 <- bam(poutcome ~ bilat_0 * treat*age + s(age)  + s(study,treat,age, bs = "re"), data=IPDMA, discrete=TRUE, family = binomial("log"))
 
 
 par(mfrow=c(2,1), cex=0.75)
@@ -474,6 +474,30 @@ plot_diff(m1, view='age',cond = list(bilat_0="Yes") , comp=list(treat=c("Placebo
 
 
 Smoothing spline have produced similar results with mixed effects included.
+
+```{r Two-Stage smoothing splines in AOM, message=FALSE, warning=FALSE }
+
+# Note: this is really not the best fitting model for the data:
+m1 <- gamm(poutcome ~ bilat_0*treat*age, random = list(study = ~1 + age + treat + bilat_0) , data=IPDMA, discrete=TRUE, family = binomial("log"))
+
+
+
+get_difference(model = m1$gam , comp=list(treat=c("Placebo", "Antibiotics"))   )
+
+
+par(mfrow=c(2,1), cex=0.75)
+plot_diff(m1$gam, view='age',cond = list(bilat_0="No") , 
+          comp=list(treat=c("Placebo", "Antibiotics")), 
+          rm.ranef=TRUE, col = "darkblue",print.summary = F, main = "Children with unilateral otitis media", 
+          xlab = "Age (in years)", ylab = "Estimated difference (log-scale)")
+
+plot_diff(m1$gam, view='age',cond = list(bilat_0="Yes") , comp=list(treat=c("Placebo", "Antibiotics")), 
+    rm.ranef=TRUE, col = "darkgreen",print.summary = F, main = "Children with bilateral otitis media",
+    xlab = "Age (in years)",
+    ylab = "Estimated difference (log-scale)")
+
+```
+
 
 
 
@@ -571,15 +595,12 @@ a
 We couldn't show that age is an effect modifier on 0.05 $\alpha$.
 
 
-# Study-wise FP2, the best FP2 is selected for each study*
+## Study-wise FP2, the best FP2 is selected for each study
 
 
 The best fitting FP2s for the somatostatin per trial suffered from the same problems as the overall FP. 
 
 ```{r studywise MFP algorithm for Somatostatin, eval=F}
-
-
-
 # BUILT OBJECTS WHERE RESULTS WILL BE STORED:
 #   ymat IS THE MATRIX FOR THE OUTCOME PARAMETERS
 #   Slist IS THE LIST WITH (CO)VARIANCE MATRICES
@@ -612,8 +633,6 @@ kable(out, format = "pandoc")
 
 
 Only 2 studies (Damoiseaux, Burke) could converge using the FP2 method. 
-
-
 
 ```{r studywise MFP algorithm for AOM , eval=FALSE}
 
@@ -649,8 +668,6 @@ kable(out, format = "pandoc")
 a= wald.test( b = betas[grep("Treatment x FP" ,rownames(betas)), 1], varb = vcov[grep("Treatment x FP" ,rownames(vcov)),grep("Treatment x FP" ,rownames(vcov))],Terms = 1:3 )
 a
 ```
-
-
 
 
 *Study wise selected FP, where the best fitting FP is extracted per study*  
