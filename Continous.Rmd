@@ -23,13 +23,13 @@ header-includes:
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
 output:
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
+ indent: true  
  pdf_document:
   fig_caption: yes 
   fig_height: 8
   fig_width: 8
- indent: true  
- word_document:
-  reference_docx: Style and bibliography/templatePaper.docx
  html_document:
   df_print: paged
 csl: Style and bibliography/journal-of-clinical-epidemiology.csl
@@ -79,6 +79,13 @@ if(!require("metafor")) install.packages("metafor")
 if(!require(effects)) install.packages("effects")
 if(!require(mgcv)) install.packages("mgcv")
 if(!require(itsadug)) install.packages("itsadug")
+if(!require(mvmeta)) install.packages("mvmeta")
+if(!require(mfp)) install.packages("mfp")
+if(!require(knitr)) install.packages("knitr")
+if(!require(aods3)) install.packages("aods3")
+if(!require(car)) install.packages("car")
+
+
 
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
         echo=F, warning=FALSE, message=FALSE, fig.pos = "H", comment = "")
@@ -146,7 +153,7 @@ We use 2 empirical IPD-sets to illustrate the methods. The first data-set [@Rove
 The second data-set [@Gevers_2013] was used to investigate the effect of Somatostatin on liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. In this example, the outcome was continuous (liver volume reduction), and age, sex, baseline liver volume, and diagnosis of either autosomal dominant polycystic liver or kidney disease were investigated for effect modification. They concluded  that use of Somatostatin was more beneficial for younger (<47) female patients. One of the 3 trials [Caroli et al.] had a cross-over design, therefore participants were treated both with the active and the control treatment in different time periods. In order to use these data for our illustrative purposes, we removed the cross-over design and used all patients only once, by selecting half of the patients from the active period and the other half (sex and age-matched) from the control period. Therefore, differences between our results and those reported in the original article will occur.
 
 ```{r}
-library(dplyr)
+
 a = IPDMA %>%
     group_by(study, treat)%>%
   summarise(`Number of participants` = n(), 
@@ -189,8 +196,7 @@ kable(final, format = "latex",
     row_spec(2, bold = T, color = "white", background = "#FF6348FF")%>%
     column_spec(column =  0,  bold = T) %>%
   add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2) )%>%
-  landscape()%>%
-  kable_as_image()
+  landscape()
   }
 
 ```
@@ -229,8 +235,7 @@ if(isTRUE(is_latex_output() || is_html_output() )){
   row_spec(row = 0,  bold = T) %>%
     column_spec(column =  0,  bold = T) %>%
   add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2) )%>%
-  landscape()%>%
-  kable_as_image()
+  landscape()
   }
 ```
 
@@ -276,7 +281,7 @@ In regression-based approaches it is important to model the appropriate function
 Another aspect to take into consideration while modelling the functional form, is whether there may be cut-points (knots) where the shape of the association changes. If these exist, this should be also taken into consideration. Again, if the cut-points are known, modelling will be more straightforward than when they are unknown. These two dimensions define how to proceed with the regression model.    
 
 ```{r, out.height="80%", out.width="80%"}
-library(knitr)  
+ 
 
 include_graphics("Figs/Assumption.png")
 ```
@@ -477,15 +482,12 @@ Smoothing spline have produced similar results with mixed effects included.
 *Overall FP, where the FSP is applied in the pooled data, in order to find the best FP (stratified by data-set).*
 
 We extracted the fractional polynomial transformations for age per treatment group and stratified per Study. 
-Then we fit a GLM per trial with this overall FP. The FP for the somatostatin data was linear. 
+Then we fit a GLM per trial with this overall FP. The FP for the somatostatin data was linear. In this method we couldn't investigate threeway interactions, as 2 studies had insufficient **female** participants and limited sample size.
 
-```{r MFP algorithm for Somatostatin}
-library(mfp)
-library(aods3)
-library(mvmeta)
 
-lm = mfp(dif_liver_perc ~ fp(Age) + Gender + strata(Study) , data=  somatostatin[ somatostatin$Drug == "placebo",])
-lm1 = mfp(dif_liver_perc ~ fp(Age)+ Gender + strata(Study) , data=  somatostatin[ somatostatin$Drug == "somatostatin",])
+```{r MFP algorithm for Somatostatin, eval=FALSE}
+lm = mfp(dif_liver_perc ~ fp(Age) + Gender  , data=  somatostatin[ somatostatin$Drug == "placebo",])
+lm1 = mfp(dif_liver_perc ~ fp(Age)+ Gender  , data=  somatostatin[ somatostatin$Drug == "somatostatin",])
 
 # BUILT OBJECTS WHERE RESULTS WILL BE STORED:
 #   ymat IS THE MATRIX FOR THE OUTCOME PARAMETERS
@@ -521,29 +523,27 @@ a
 
 ```
 
-The MFP algorithm crashed for the AOM data.... 
-FPs in two stage approach are not working correctly
+Little et al. had no information over the bilateral otitis media and Appelman et al. didn't have enough participants to investigate the FP shape. So we droped these studies. 
 
-```{r MFP algorithm for AOM, eval=FALSE}
-
+```{r MFP algorithm for AOM}
 glm = mfp(poutcome ~  fp(age) +  strata(study),
           data=  IPDMA[ IPDMA$treat == "Placebo",], family = binomial("logit") )
 glm1= mfp(poutcome ~  fp(age) +  strata(study), 
           data=  IPDMA[IPDMA$treat == "Antibiotics",], family = binomial("logit") )
 
 
-ymat <- matrix(NA,length(unique(IPDMA$study)),
-               8,dimnames=list(unique(IPDMA$study),c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")))
+studies =  unique(IPDMA[IPDMA$study != "Little" & IPDMA$study != "Appelman" ,]$study) 
+ymat <- matrix(NA,length(studies),
+               8,dimnames=list(studies,c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")))
 
 
-Slist <- vector("list",length(unique(IPDMA$study)))
-names(Slist) <- unique(IPDMA$study)
+Slist <- vector("list",length(studies))
+names(Slist) <- studies
 
-for(i in unique(IPDMA$study)) {
+for(i in studies){
     # LOAD study
     data <- IPDMA[IPDMA$study == i ,]
     if( i == "Damoiseaux") data$age =  jitter(data$age)
-    if( i == "Little") data$age =  jitter(data$age)
     data$Agesq =  (data$age)^2
     # RUN THE MODEL
     model <- glm(   paste("poutcome ~ treat *I(",glm1$trafo$formula[1],")* bilat_0" )  , 
@@ -562,24 +562,24 @@ row.names(out) <-row.names(vcov) <- row.names(betas) <-  c("Intercept","Treatmen
 kable(out, format = "pandoc")
 
 
-a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:2 )
+a= wald.test( b = betas[grep("Treatment x FP" ,rownames(betas)), 1], varb = vcov[grep("Treatment x FP" ,rownames(vcov)),grep("Treatment x FP" ,rownames(vcov))],Terms = 1:3 )
 a
 
 
 ```
 
-
+We couldn't show that age is an effect modifier on 0.05 $\alpha$.
 
 
 # Study-wise FP2, the best FP2 is selected for each study*
 
 
-The best fitting FP2s for the somatostatin per trial were linear, so the analysis is identical with the two-stage global polynomial.
+The best fitting FP2s for the somatostatin per trial suffered from the same problems as the overall FP. 
 
 ```{r studywise MFP algorithm for Somatostatin, eval=F}
-library(mfp)
 
-library(mvmeta)
+
+
 # BUILT OBJECTS WHERE RESULTS WILL BE STORED:
 #   ymat IS THE MATRIX FOR THE OUTCOME PARAMETERS
 #   Slist IS THE LIST WITH (CO)VARIANCE MATRICES
@@ -611,19 +611,20 @@ kable(out, format = "pandoc")
 ```
 
 
-Crashed for AOM
+Only 2 studies (Damoiseaux, Burke) could converge using the FP2 method. 
 
 
 
 ```{r studywise MFP algorithm for AOM , eval=FALSE}
 
+studies =  unique(IPDMA[IPDMA$study != "Little" & IPDMA$study != "Appelman" 
+                        & IPDMA$study != "Saux" & IPDMA$study != "McCormick",]$study) 
+ymat <- matrix(NA,length(studies),
+               8,dimnames=list(studies,c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")))
 
-ymat <- matrix(NA,length(unique(IPDMA$study)),
-               8,dimnames=list(unique(IPDMA$study),c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Bilateral x FP(Age)" , "Treatment x FP(Age) x Bilateral")))
 
-
-Slist <- vector("list",length(unique(IPDMA$study)))
-names(Slist) <- unique(IPDMA$study)
+Slist <- vector("list",length(studies))
+names(Slist) <- studies
 
 for(i in unique(IPDMA$study)) {
     # LOAD study
@@ -644,6 +645,9 @@ out <- summary(mvmeta(ymat, Slist,method = "reml" ))$coef
 row.names(out) <- c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")
 kable(out, format = "pandoc")
 
+
+a= wald.test( b = betas[grep("Treatment x FP" ,rownames(betas)), 1], varb = vcov[grep("Treatment x FP" ,rownames(vcov)),grep("Treatment x FP" ,rownames(vcov))],Terms = 1:3 )
+a
 ```
 
 
@@ -653,17 +657,13 @@ kable(out, format = "pandoc")
   
 The best fitting FPs for the somatostatin  per trial were linear, so the analysis is identical with the two-stage global polynomial.
 
-
-
-
 *Two-stage Global polynomials (coefficient pooling)*
 
 For the Gevers et al. data-analysis, we assumed a linear functional form, as we had limited data (108 observations) and spending $2 \times p$ (degree of polynomial) $\times  J$ (trial number) was considered inefficient. Furthermore, the initial pooled plot showed no significant non-linearity. In contrast, for the Rovers et al. we observed an overall quadratic shape. Damoiseaux et al. had age rounded and the participants were only 1- and 2-years old children. To avoid non-convergence of the log-binomial models we created a slight artificial deviation for the Damoiseaux et al. using the **jitter()** command.
 
 In two-stage meta-analysis using linear assumptions, effect modification across age was not statistically significant. 
 
-```{r Gasparini approach with mvmeta  for somatostatin}
-library(mvmeta)
+```{r Gasparini approach with mvmeta  for somatostatin, eval=FALSE}
 # BUILT OBJECTS WHERE RESULTS WILL BE STORED:
 #   ymat IS THE MATRIX FOR THE OUTCOME PARAMETERS
 #   Slist IS THE LIST WITH (CO)VARIANCE MATRICES
@@ -761,7 +761,7 @@ glmLinear <- glmer(poutcome ~ treat * poly(age)*bilateral + (treat|study) + (1|s
 
 
 ```{r, eval=FALSE}
-library(car)
+
 
 out <- summary(lmLinear)$coef
 out <- cbind(out, Anova(lmLinear,3)$`Pr(>Chisq)`)
