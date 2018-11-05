@@ -434,8 +434,35 @@ In contrast with linear regression models, in smoothing spline models we cannot 
 
 ```{r Two-Stage smoothing splines in Somatostatin }
 
-# Note: this is really not the best fitting model for the data:
+# this is really not the best fitting model for the data:
 
+ymat <- matrix(NA,length(unique(somatostatin$Study)),
+               8,dimnames=list(unique(somatostatin$Study),c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")))
+Slist <- vector("list",length(unique(somatostatin$Study)))
+names(Slist) <- unique(somatostatin$Study)
+
+for(i in unique(somatostatin$Study)) {
+    
+    # LOAD study
+    data <- somatostatin[somatostatin$Study == i ,]
+
+    # RUN THE MODEL
+    model <- lm(paste(" dif_liver_perc ~Drug *",I(lm$trafo$formula[1]),"* Gender" ), data = data)
+    
+    # EXTRACT AND SAVE THE RELATED COEF AND VCOV
+    ymat[i,] <- model$coefficients
+    Slist[[i]] <- vcov(model)
+  }
+
+out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
+
+betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
+vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
+row.names(out) <-row.names(vcov) <- row.names(betas) <- c("Intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
+kable(out, format = "pandoc")
+
+a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:2 )
+a
 
 
 
