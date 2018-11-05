@@ -23,13 +23,13 @@ header-includes:
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
 output:
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
+ indent: true  
  pdf_document:
   fig_caption: yes 
   fig_height: 8
   fig_width: 8
- indent: true  
- word_document:
-  reference_docx: Style and bibliography/templatePaper.docx
  html_document:
   df_print: paged
 csl: Style and bibliography/journal-of-clinical-epidemiology.csl
@@ -40,6 +40,7 @@ bibliography: Style and bibliography/bibliography2.bib
 
 
 ```{r global_options , echo=FALSE, message=FALSE, warning= FALSE}
+.libPaths( c( .libPaths(), "C:/Users/Michael Belias/Documents/R/win-library/3.4") )
 rm(list=ls()) ### To clear namespace
 ## Fractional Polynomials
 ## Load data-set
@@ -83,8 +84,8 @@ if(!require(mvmeta)) install.packages("mvmeta")
 if(!require(mfp)) install.packages("mfp")
 if(!require(knitr)) install.packages("knitr")
 if(!require(aods3)) install.packages("aods3")
-if(!require(car)) install.packages("car")
-
+if(!require(car)) install.packages("car", dependencies = T)
+if(!require(data.table)) install.packages("data.table")
 
 
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
@@ -115,7 +116,7 @@ source("Data/somatostatin_descriptives.R")
 
 ## Objective 
 
-To give an overview and illustrate a variety of tree-based and regression-based approaches to detect and model effect-modification in meta-analysis(MA) of individual participant data(IPD). For instance, covariate-centred one-stage IPD-MA, mixed effects fractional polynomials, splines, meta-stepp and glmm-trees, using both two and one stage approach when possible.
+To provide an overview and illustrate a variety of tree-based and regression-based approaches to detect and model effect-modification in meta-analysis(MA) of individual participant data(IPD). For instance, covariate-centred one-stage IPD-MA, mixed effects fractional polynomials, splines, meta-stepp and glmm-trees, using both two and one stage approach when possible.
 
 ##  Study Design and Setting
 
@@ -139,26 +140,62 @@ We conclude that subgroup detection in IPD-MA requires knowing the underlying as
 
 
 \par     Individual participant data meta-analysis (IPD-MA) is a type of systematic review where data gathered from multiple studies are combined and analysed centrally. The capability to standardise subgroup definitions and outcomes across studies, the increased power to investigate other than linear associations, the increased validity and reliability of the subgroups and the flexibility to search for subgroups based on combinations of patient and/or disease characteristics are some of the benefits of using IPD of multiple trials rather than traditional (aggregate) meta-analysis. A vivid field of research towards personalised healthcare is the investigation of effect modification. For this task, IPD-MA is considered a gold standard as single trials rarely have sufficient power to identify relevant effect modification.
-\par     Effect modification may occur in categorical and/or continuous covariates: differences in the treatment effect may be present between smokers and non-smokers, or may depend on the age of the patient. In this case, subgroups are already defined and therefore, only hypothesis testing may be conducted. Then the investigation of subgroup effects is performed using statistical tools, such as generalised linear models combined with meta-analytical tools, or generalised linear mixed-effects models with interaction terms included. Subsequently, the estimated coefficients are checked for statistical significance. On the other hand, effect modification across a continuous covariate is more challenging, as the subgroups are non-existent or not be a-priori known. Besides confirming an effect modification, we may be compelled to further explore also the association of the variable with the outcome.
+\par     Effect modification may be present in both categorical and/or continuous covariates. For instance, differences in the treatment effect may be present between smokers and non-smokers, or across the levels of the age of the patient. If subgroups are already defined only hypothesis testing may be conducted, using statistical tools such as generalised linear models combined with meta-analytical tools, or generalised linear mixed-effects models with interaction terms included. On the other hand, effect modification across a continuous variable is more challenging, as the subgroups are non-existent. Furthermore, besides confirming an effect modification, we may be compelled to state at what point does the treatment effect changes.
 
-A common technique is to categorise the continuous covariate, using some prior knowledge. Thereto, subgroups are generated using prior knowledge driven from literature. Nevertheless, this technique is only reasonable when we wish to confirm a treatment effect difference across the levels of the dichotomous variable. Furthermore, categorisation has been criticised for misspecification, loss of information and power, inflation of the type I error rate when adjusting for confounding and biased results [@Royston_2005 ; @Altman_2006 ; @Austin_2004 ; @Maxwell_1993 ; @Weinberg_1995]. Another common practice is to assume linearity over the link function, a method that may also lead to deterioration of power, misspecification and even spurious results [@J_rgensen_2016]. Therefore, besides confirming a variable if is an effect modifier, we may have to the explore the functional form of the outcome-effect modifier association. Various approaches to account for non-linear associations have been developed, such as: fractional polynomials (FPs) [@Sauerbrei_2011, @royston_interaction_2013] and splines. 
-\par      Regression based approaches such as: linear models, piecewise polynomials, fractional polynomials and smoothing splines may be performed either in one or two stages. In two-stage approach, each trial is first modelled separately, using an appropriate statistical model of choice. Subsequently, we pool either the extracted estimates or the fitted functions across trials using standard meta-analytical tools. In contrast, in one-stage IPD-MA all IPD from every trial are analysed simultaneously whilst accounting for the clustering of participants within studies. Hereto, researchers may model interactions between treatment and patient-level covariate while accounting also for the shape of the association. Recent recommendations, suggest mean-centring the potential effect modifiers per trial in order to account for potential ecological bias due to unadjusted confounding. Within trials clustering can be accounted using either fixed effect**s** (stratified intercept/slope), fixed effect (common intercept/slope) or random effects (intercept and/slopes driven from a common Normal distribution) [@Legha_2018]. Finally, state-of-the-art plot and tree-based methods have been developed for exploring effect modification. Generalised linear mixed-effects model trees (glmertree) introduced by Fokkema et al. [@Fokkema_2017] can handle non-linear associations, whilst accounting for within studies clustering of the participants. Meta-stepp is a plot based moving average (sliding window) method that approximates non-linear effects from clustered data [@Wang_2016]. Finally, although, providing the whole information of the outcome-continuous effect modifier association is more informative clinical decisions are based in knots in which the treatment effect is altered. These knots may be altered if the assumptions are altered or if the outcome-effect modifier functional form is mis-specified.
+  A common technique is to categorise the continuous covariate. Thereto, subgroups are created using prior knowledge driven from literature. Nevertheless, this technique is only reasonable when we wish to confirm that the treatment effect is different between the levels of the categorised variable. For example, if we want to investigate women before and after menopause, we can categorise age in a fixed value between 40 and 50, according to our beliefs. As a consequence, categorisation has been criticised for misspecification, loss of information and power, inflation of the type I error rate when adjusting for confounding and even biased results [@Royston_2005 ; @Altman_2006 ; @Austin_2004 ; @Maxwell_1993 ; @Weinberg_1995]. Another common practice is to assume linearity over the link function, a method that may also lead to deterioration of power, misspecification and even spurious results [@J_rgensen_2016]. Therefore, besides confirming whether a variable is an effect modifier, we have to explore the functional form of the outcome-effect modifier association. Various approaches to account for non-linear associations have been developed, such as: fractional polynomials (FP) [@Sauerbrei_2011, @royston_interaction_2013] and splines. 
+\par      Regression based approaches such as: linear models, piecewise polynomials, fractional polynomials and smoothing splines may be performed either in one or two stages. In two-stage approach, each trial is first modelled separately, using an appropriate statistical model of choice. Subsequently, we pool either the extracted coefficients, if commone across the trials, or their fitted functions using standard meta-analytical tools. In contrast, in one-stage IPD-MA all IPD from every trial are analysed simultaneously whilst accounting for the clustering of participants within studies. Hereto, researchers model interactions between treatment and patient-level variables, while accounting also for the shape of its association with the outcome. Recent recommendations, suggest mean-centring the potential effect modifiers per trial in order to account for potential ecological bias due to unadjusted confounding. Within trials clustering can be accounted using either fixed effect**s** (stratified intercept/slope), fixed effect (common intercept/slope) or random effects (intercept and/slopes driven from a common Normal distribution) [@Legha_2018]. Furthermore, state-of-the-art plot and tree-based methods have been developed for exploring effect modification. Generalised linear mixed-effects model trees (GLMM-tree) introduced by Fokkema et al. [@Fokkema_2017] can handle non-linear associations, whilst accounting for within studies clustering of the participants. Furthermore, since they don't use assumptions GLMM-trees can be used for exploratory data-analysis. Finally, meta-stepp is a plot based moving average (sliding window) method that approximates non-linear effects from clustered data [@Wang_2016]. 
+  Although, providing the whole information of the outcome-continuous effect modifier association is more informative, clinical decisions are based in cut-points (knots) in which the treatment effect is altered. These knots may be altered if the assumptions are altered or if the outcome-effect modifier functional form is mis-specified.
 \par
-  It is often unclear when each method should be preferred. It is also unclear if the treatment effect function [@Royston_2008] or interaction term analysis [@Sun_2010] is most appropriate in randomised clinical trials (RCT) meta-analysis framework. We aim to describe and illustrate the aforementioned methods. For that task, we will use both regression-based approaches such as meta-stepp, centred one-stage IPD-MA, mixed effects fractional polynomials and splines, and tree-based approaches such as generalised linear mixed-effects model trees. Although confirmatory and exploratory data analyses are almost never conducted one without the other we wish to point out that we will focus on the exploratory part. For instance, we may explore for potential effect modification and/or functional form of outcome-effect modifier association, or for effect modification on a subgroup, or how many times does the effect change over a continuous variable, and at which knots. We will introduce the data and the methods we used in chapter 2 and apply them on real empirical data to illustrated their performance. 
-
+  It is often unclear when each method should be preferred. It is also unclear if the treatment effect function [@Royston_2008] or interaction term analysis [@Sun_2010] is more appropriate and when. We aim to describe and illustrate the aforementioned methods. We will introduce the IPD-sets and the methods we used in chapter 2. 
+  
+ 
 # 2. Example datasets
 
-We use 2 empirical IPD-sets to illustrate the methods. The first data-set [@Rovers_2006] was investigating the effect of antibiotics in acute otitis media on children aged from 0 to 12 years old. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no). Rovers et al. concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were also investigated separately for potential effect modification and only bilateral acute otitis media showed a significant result.
+  We used 2 IPD-sets to illustrate our methods. The first data-set [@Rovers_2006] was investigating the effect of antibiotics in acute otitis media on children aged from 0 to 12 years old. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no). Rovers et al. concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were  investigated also separately for potential effect modification and only bilateral acute otitis media showed a significant result.
 
 The second data-set [@Gevers_2013] was used to investigate the effect of Somatostatin on liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. In this example, the outcome was continuous (liver volume reduction), and age, sex, baseline liver volume, and diagnosis of either autosomal dominant polycystic liver or kidney disease were investigated for effect modification. They concluded  that use of Somatostatin was more beneficial for younger (<47) female patients. One of the 3 trials [Caroli et al.] had a cross-over design, therefore participants were treated both with the active and the control treatment in different time periods. In order to use these data for our illustrative purposes, we removed the cross-over design and used all patients only once, by selecting half of the patients from the active period and the other half (sex and age-matched) from the control period. Therefore, differences between our results and those reported in the original article will occur.
 
 ```{r}
+b = somatostatin %>%
+    group_by(Study, Drug)%>% 
+    summarise(`Number of participants` = n(), 
+              `Age, median [range]` =  paste(median(Age,na.rm = T)  , " [" , min(Age,na.rm = T) , ",",max(Age,na.rm = T) ,"]", sep = "" ) ,
+              Female = paste(sum(Gender == "Female") , " (" , paste(round(100*mean(as.numeric(Gender == "Female"))),"%",sep = "") , ")", sep = "" ),
+              Male = paste(sum(Gender == "Male") , " (" , paste(round(100*mean(as.numeric(Gender == "Male"))),"%",sep = "") , ")", sep = "" ),
+              `Log-scaled Liver volume difference, median [range]` =  paste(round(median(dif_LnLiver,na.rm = T),3 ) , " [" , round(min(dif_LnLiver,na.rm = T),3 ) , ",",round(max(dif_LnLiver,na.rm = T),3 ) ,"]", sep = "" ))
+
+
+final=t(b[,3:7])
+colnames(final) = rep(c("Placebo","Somatostatin"),3)
+
+
+if(isTRUE(is_latex_output() || is_html_output() )){
+  kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2), bold = T  )#%>%
+  #landscape()
+}else{
+      kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2), bold = T  )#%>%
+  #landscape()
+}
 
 a = IPDMA %>%
     group_by(study, treat)%>%
   summarise(`Number of participants` = n(), 
             `Age, median [range]` =  paste(round(median(age),2)  , " [" , round(min(age),2), ",",round(max(age),2) ,"]", sep = "" ) ,
             `Males (%)` = paste(sum(gender) , " (" , paste(round(100*mean(as.numeric(gender))),"%",sep = "") , ")", sep = "" ),
+            `Bilateral AOM (%)` = paste(sum(as.numeric(bilat_0) -1), " (" , paste(round(100*mean(as.numeric(bilat_0) -1)),"%",sep = "") , ")", sep = "" ),
+            `Otorrhoea (%)` = paste(sum(oto_0) , " (" , paste(round(100*mean(as.numeric(oto_0))),"%",sep = "") , ")", sep = "" ),
             `RAOM (%)`= paste(sum(raom) , " (" , paste(round(100*mean(as.numeric(raom))),"%",sep = "") , ")", sep = "" ), 
             `Sibling (%)`= paste(sum(sibling) , " (" , paste(round(100*mean(as.numeric(sibling))),"%",sep = "") , ")", sep = "" ),
             `Winter season (%)` =  paste(sum(season) , " (" , paste(round(100*mean(as.numeric(season))),"%",sep = "") , ")", sep = "" ),
@@ -168,12 +205,11 @@ a = IPDMA %>%
             `Runny nose (%)`=paste(sum(rnose_0) , " (" , paste(round(100*mean(as.numeric(rnose_0))),"%",sep = "") , ")", sep = "" ),
             `Ear pain (%)` = paste(sum(pain_0) , " (" , paste(round(100*mean(as.numeric(pain_0))),"%",sep = "") , ")", sep = "" ),
              `Fever (%)` = paste(sum(fever_0) , " (" , paste(round(100*mean(as.numeric(fever_0))),"%",sep = "") , ")", sep = "" ),
-            `Otorrhoea (%)` = paste(sum(oto_0) , " (" , paste(round(100*mean(as.numeric(oto_0))),"%",sep = "") , ")", sep = "" ),
             `Red tympanic membrane (%)` = paste(sum(tmcol_0) , " (" , paste(round(100*mean(as.numeric(tmcol_0))),"%",sep = "") , ")", sep = "" ),
             `Bulging tympanic membrane (%)` = paste(sum(tmbul_0) , " (" , paste(round(100*mean(as.numeric(tmbul_0))),"%",sep = "") , ")", sep = "" ))
 
 
-final=t(a[,3:17])
+final=t(a[,3:7])
 colnames(final) = rep(c("Placebo","Antibiotics"),6)
 #%>%
   #kable_as_image()
@@ -183,9 +219,8 @@ kable(final, format = "latex",
       booktabs = T, caption = "Baseline Characteristics (Rovers et al.)" ) %>%
   kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
   row_spec(row = 0,  bold = T) %>%
-    row_spec(2, bold = T, color = "white", background = "#FF6348FF")%>%
     column_spec(column =  0,  bold = T) %>%
-  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2) )%>%
+  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2), bold = T )%>%
   landscape()
 }else{
   kable(final, format = "latex",
@@ -193,57 +228,20 @@ kable(final, format = "latex",
       booktabs = T, caption = "Baseline Characteristics (Rovers et al.)" ) %>%
   kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
   row_spec(row = 0,  bold = T) %>%
-    row_spec(2, bold = T, color = "white", background = "#FF6348FF")%>%
     column_spec(column =  0,  bold = T) %>%
-  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2) )%>%
+  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2) , bold = T )%>%
   landscape()
   }
 
 ```
 
 
-```{r}
-
-b = somatostatin %>%
-    group_by(Study, Drug)%>% 
-    summarise(`Number of participants` = n(), 
-              `Age, median [range]` =  paste(median(Age)  , " [" , min(Age) , ",",max(Age) ,"]", sep = "" ) ,
-              Female = paste(sum(Gender == "Female") , " (" , paste(round(100*mean(as.numeric(Gender == "Female"))),"%",sep = "") , ")", sep = "" ),
-              Male = paste(sum(Gender == "Male") , " (" , paste(round(100*mean(as.numeric(Gender == "Male"))),"%",sep = "") , ")", sep = "" ),
-              ADPKD= paste(sum(Diagnosis == "0") , " (" , paste(round(100*mean(as.numeric(Diagnosis == "0"))),"%",sep = "") , ")", sep = "" ), 
-              PCLD= paste(sum(Diagnosis == "1") , " (" , paste(round(100*mean(as.numeric(Diagnosis == "1"))),"%",sep = "") , ")", sep = "" ),
-              `Liver volume, mL , median [range]` =  paste(median(Base_Liver)  , " [" , min(Base_Liver) , ",",max(Base_Liver) ,"]", sep = "" ))
-
-
-final=t(b[,3:9])
-colnames(final) = rep(c("Placebo","Somatostatin"),3)
-
-if(isTRUE(is_latex_output() || is_html_output() )){
-  kable(final, format = "latex",
-      longtable = T, 
-      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
-  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
-  row_spec(row = 0,  bold = T) %>%
-    column_spec(column =  0,  bold = T) %>%
-  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2) )%>%
-  landscape()
-}else{
-      kable(final, format = "latex",
-      longtable = T, 
-      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
-  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
-  row_spec(row = 0,  bold = T) %>%
-    column_spec(column =  0,  bold = T) %>%
-  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2) )%>%
-  landscape()
-  }
-```
 
 
 # 3. Methods
 ## 3.1 Notation
 
-As described in section 2, both our datasets are composed of smaller trials. This within trial clustering should be accounted [@Abo_Zaid_2013] otherwise, biased effect estimates and therefore conclusions may be formulated. We introduce some notation that will be used hereto.
+As described in section 2, both our datasets are composed of multiple trials. Therefore, we introduce some notation that will be used hereto.
 
 We are denoting:
 
@@ -264,7 +262,7 @@ Recursive partitioning is a statistical method typically used in multivariable a
 ### 3.2.1 Generalised Linear Mixed Model Trees (glmm or glmer trees)
 
 
-The Generalised linear mixed model (GLMM) tree approach is a state-of-the-art technique, proposed by Fokkema et al. [@Fokkema_2017] for the detection of treatment-effect modifier interactions when we have clustered data. In our case, we assume that the participants are clustered within the trials A model-based recursive partitioning [@Zeileis_2008;  @Su_2009] algorithm is applied, while also considering the clustered structure of datasets.
+The Generalised linear mixed model (GLMM) tree approach is a state-of-the-art technique, proposed by Fokkema et al. [@Fokkema_2017] for the detection of treatment-effect modifier interactions when we have clustered data. In our case, we assume that the participants are clustered within the trials A model-based recursive partitioning [@Zeileis_2008;  @Su_2009] algorithm is applied, while also considering the clustered structure of datasets.This approach is exploratory so we can increase or decrease the significance level ($\alpha$) for detecting subgroups.Therefore we may use glmm-trees to detect the crude cut-points, where the treatment effect is altered and their underline subgroups. 
 
 The GLMM tree algorithm:
 
@@ -281,8 +279,6 @@ In regression-based approaches it is important to model the appropriate function
 Another aspect to take into consideration while modelling the functional form, is whether there may be cut-points (knots) where the shape of the association changes. If these exist, this should be also taken into consideration. Again, if the cut-points are known, modelling will be more straightforward than when they are unknown. These two dimensions define how to proceed with the regression model.    
 
 ```{r, out.height="80%", out.width="80%"}
- 
-
 include_graphics("Figs/Assumption.png")
 ```
 
@@ -390,9 +386,11 @@ $g(Y_{ij}) = FP_{1j}(X)  + FP_{2j}(X) \times Treatment$
 
 # Results
 
-We will illustrate the results of the aforementioned approaches by ascending order of assumptions made. Therefore, we will start with the tree-based approach and smoothing splines, as we believe that these should be the first "exploratory" steps. In the Gevers et al. data-set we increased the level of significance for the lmer, due to small sample size per trial. 
+We will illustrate the results of the aforementioned approaches by ascending order of assumptions made. Therefore, we will start with the tree-based approach and smoothing splines, as we believe that these should be the first "exploratory" steps. 
 
 ### Lmer trees
+
+In the Gevers et al. data-set we increased the level of significance for the glmm-tree, due to small per trial sample size. 
 
 ```{r lmer tree Somatostatin, eval=FALSE  }
 tree  = lmertree(dif_liver_perc~Drug |(1| Study) | Age + Gender  , alpha=0.3,
@@ -405,7 +403,7 @@ plot(tree, which = "tree",main = "Gevers et al")
 include_graphics("Figs/SomatostatinTree.png")
 ```
 
-We show that there is a difference between the average outcomes of male and females. This difference seems to emanate from young women ($\leq$ 46 years). 
+We detect a potential difference between the average outcomes of male and females. This difference seems to emanate from young women ($\leq$ 46 years). 
 
 ### Glmer trees
 
@@ -421,17 +419,88 @@ plot(tree, which = "tree",main = "Rovers et al")
 include_graphics("Figs/AOMTree.png")
 ```
 
-On the Rovers et al., dataset we show that age is a potential effect modifier and we may also have a tree-way interaction with bilateral otitis.
+On the Rovers et al., dataset we detect potential effect modification and also a tree-way interaction with bilateral otitis.
 
-## Two-stage smoothing splines (I need to explain her some things)
 
-In contrast with linear regression models, in nonlinear models we cannot interpret the shape of the regression line from the summary. Therefore, visualization is an important tool to investigate effect modification. We show that women younger than 57 have a treatment benefit, probably due to menopause.
+## Regression-based approaches
 
-```{r Two-Stage smoothing splines in Somatostatin, message=FALSE, warning=FALSE }
+We will show the results for each approach, first when performing a two-stage approach and then using a one-stage approach. 
+The somatostatin data-set, provided trials with few participants, see table 1. For instance, Caroli et.al had only 1 female participant in the somatostatin group. On the other hand, Keimpema et al. and Hogan et al. had limited participation of men. Therefore, the two-stage approaches were limited to linear assumptions, and suffered from trial dropouts. 
+
+
+## Two-stage smoothing splines 
+
+In contrast with linear regression models, in smoothing spline models we cannot interpret the shape of the regression line from the summary. Therefore, visualization is an important tool to investigate effect modification. We show that women younger than 57 have a treatment benefit, probably due to menopause.
+
+```{r Two-Stage smoothing splines in Somatostatin }
 
 # Note: this is really not the best fitting model for the data:
-m1 <- bam(dif_liver_perc ~ Drug * Age*Gender + s(Age)  + s(Study,Drug,Gender, bs = "re") , data = somatostatin,
-          method="REML" ,  discrete=TRUE)
+
+
+
+
+par(mfrow=c(2,1), cex=0.75)
+plot_diff(m1, view='Age',cond = list(Gender="Male") , comp=list(Drug=c("placebo", "somatostatin")), 
+    rm.ranef=F, col = "darkblue",print.summary = F, main = "Men", 
+    xlab = "Age (in years)",
+    ylab = "Estimated treatment difference")
+
+plot_diff(m1, view='Age',cond = list(Gender="Female") , comp=list(Drug=c("placebo", "somatostatin")), 
+    rm.ranef=F, col = "darkgreen",print.summary = F, main = "Women",
+    xlab = "Age (in years)",
+    ylab = "Estimated treatment difference ")
+
+```
+
+
+In the acute otitis media data-set we show that children 0-5 years have a treatment benefit.
+
+```{r Two-Stage smoothing splines in AOM, message=FALSE, warning=FALSE }
+
+# Note: this is really not the best fitting model for the data:
+m1 <- gam(poutcome ~ bilat_0 * treat*age + s(age, by = treat) + 
+            s(age,study,bs = "re") + 
+            s(bilat_0,study,bs = "re") + 
+            s(treat,study,bs="re") ,
+          data=IPDMA, discrete=TRUE, family = binomial("log"))
+
+
+par(mfrow=c(2,1), cex=0.75)
+plot_diff(m1, view='age',cond = list(bilat_0="No") , 
+          comp=list(treat=c("Placebo", "Antibiotics")), 
+    rm.ranef=TRUE, col = "darkblue",
+    print.summary = F, 
+    main = "Children with unilateral otitis media", 
+    xlab = "Age (in years)",
+    ylab = "Estimated difference (log-scale)")
+
+plot_diff(m1, view='age',
+          cond = list(bilat_0="Yes") , 
+          comp=list(treat=c("Placebo", "Antibiotics")), 
+    rm.ranef=TRUE, 
+    col = "darkgreen",
+    print.summary = F, 
+    main = "Children with bilateral otitis media",
+    xlab = "Age (in years)",
+    ylab = "Estimated difference (log-scale)")
+
+plot_smooth(m1, view = "age", rm.ranef = F, plot_all = c("treat"))
+plot_smooth(m1, view = "age", rm.ranef = F, plot_all = c("study"))
+
+```
+
+
+##  One-stage smoothing splines
+
+
+
+```{r One-Stage smoothing splines in Somatostatin }
+
+# Note: this is really not the best fitting model for the data:
+m1 <- bam(dif_liver_perc ~ Drug * Gender*Age + 
+            s(Study,Age,bs = "re") + 
+            s(Study,Gender,bs = "re") + 
+            s(Study,Drug,bs="re") , data = somatostatin,method="REML" ,  discrete=TRUE)
 
 
 par(mfrow=c(2,1), cex=0.75)
@@ -448,41 +517,12 @@ plot_diff(m1, view='Age',cond = list(Gender="Female") , comp=list(Drug=c("placeb
 ```
 
 
-In the acute otitis media data-set we show that children 0-5 years have a treatment benefit.
 
-```{r Two-Stage smoothing splines in AOM, message=FALSE, warning=FALSE }
-
-# Note: this is really not the best fitting model for the data:
-m1 <- bam(poutcome ~ bilat_0 * treat*age + s(age)  + s(study,treat,age, bs = "re"), data=IPDMA, discrete=TRUE, family = binomial("log"))
-
-
-par(mfrow=c(2,1), cex=0.75)
-plot_diff(m1, view='age',cond = list(bilat_0="No") , comp=list(treat=c("Placebo", "Antibiotics")), 
-    rm.ranef=TRUE, col = "darkblue",print.summary = F, main = "Children with unilateral otitis media", 
-    xlab = "Age (in years)",
-    ylab = "Estimated difference (log-scale)")
-
-plot_diff(m1, view='age',cond = list(bilat_0="Yes") , comp=list(treat=c("Placebo", "Antibiotics")), 
-    rm.ranef=TRUE, col = "darkgreen",print.summary = F, main = "Children with bilateral otitis media",
-    xlab = "Age (in years)",
-    ylab = "Estimated difference (log-scale)")
-
-```
-
-
-##  One-stage smoothing splines
-
-
-Smoothing spline have produced similar results with mixed effects included.
-
-```{r Two-Stage smoothing splines in AOM, message=FALSE, warning=FALSE }
+```{r One-Stage smoothing splines in AOM, message=FALSE, warning=FALSE, eval = FALSE }
 
 # Note: this is really not the best fitting model for the data:
-m1 <- gamm(poutcome ~ bilat_0*treat*age, random = list(study = ~1 + age + treat + bilat_0) , data=IPDMA, discrete=TRUE, family = binomial("log"))
-
-
-
-get_difference(model = m1$gam , comp=list(treat=c("Placebo", "Antibiotics"))   )
+m1 <- gamm(poutcome ~ bilat_0*treat*age, random = list(study = ~1 + age + treat ) , 
+           data=IPDMA, discrete=TRUE, family = binomial("log"))
 
 
 par(mfrow=c(2,1), cex=0.75)
@@ -765,6 +805,7 @@ a
 *One-stage IPD-MA*
 
 ```{r}
+library(lmerTest)
 
 lmLinear <- lmer(dif_liver_perc ~ Drug * Age*Gender + (Drug|Study) + (1|Study) ,
                  data = somatostatin , 
@@ -948,6 +989,5 @@ ggplot(IPDMA, aes(x=age, y=poutcome, color= treat)) + geom_point() +
 ##### 
 
 # References
-
 
 
