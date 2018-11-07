@@ -86,6 +86,8 @@ if(!require(knitr)) install.packages("knitr")
 if(!require(aods3)) install.packages("aods3")
 if(!require(car)) install.packages("car", dependencies = T)
 if(!require(data.table)) install.packages("data.table")
+if(!require(lmerTest)) install.packages("lmerTest")
+
 
 
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
@@ -270,7 +272,7 @@ include_graphics("Figs/Assumption.png")
 include_graphics("Figs/TypesOfMethods.png")
 ```
 
-Finally, within-trial clustering should be accounted for[@Abo_Zaid_2013]. This may be achieved, as described in the introduction, either by conducting a two-stage meta-analysis, or by using a mixed effects models or an equivalent method in a one-stage approach. We will describe both, starting with approaches based on global functional forms as they make more assumptions, and adding gradually more flexibility with the segmented functional form approaches.
+Finally, within-trial clustering should be accounted for[@Abo_Zaid_2013]. This may be achieved, as described in the introduction, either by conducting a two-stage meta-analysis, or by using a mixed effects models or an equivalent method in a one-stage approach. We will describe both, starting with approaches based on global functional forms as they make more assumptions, and adding gradually more flexibility with the segmented functional form approaches. We will start with the two stage and end with one-stage appaoraches, within each type of analysis we will start with splines, continue with fractional polynomials and finally describe polynomials. 
 
 ```{r }
 
@@ -303,20 +305,11 @@ Subsequently, we can either pool the coefficients or the fitted functions using 
 
 The functions $\hat f_{1j}, \hat f_{2j}$ are providing the functional shape of the outcome-effect modifier association per trial j for the treated and the control respectively. Depending on the a priori knowledge of the association’s functional form and the cut-points where the effect is altered we may fit.
 
-*Known functional form and known $\kappa = 0$ knots (global functions)*
+*Unknown functional form and known knots * 
 
-  * Global-polynomials: 
-  
-  $$f_1 =  \sum_{\pi=1}^{\pi=p} \beta_{1\pi} \times X^{\pi}$$ $$ f_2 = \sum_{\pi=1}^{\pi=p} \beta_{2\pi} \times X^{\pi}$$
-    - Global polynomials typically are limited to either linear, Quadratic or Cubic, but can go to higher degrees.
-
-
-*Known functional form and known $\kappa \geq 1$ knots and known position of the knots (segmented functions)*
-
-  * Piecewise-polynomials with $\kappa$ knots 
-    $$f_1 = \sum_{k =1}^{ k= \kappa}f_{1\kappa}(X_{x_{k-1} \leq X < x_{k-1}} ) f_2 =  \sum_{k =1}^{k= \kappa}f_{2\kappa}(X_{x_{k-1} \leq X < x_{k-1}} )$$
-Piecewise-polynomials mostly used are piecewise constant, linear, quadratic and cubic. 
-
+Splines are a generalisation of piecewise polynomials and can offer great flexibility to explore the shape of the outcome-effect modifier association. Regression splines of **p** degree should be continuous, have **p-1** continuous derivatives and the $p^{th}$ derivative should constant across the knots. They are quite similar to piecewise polynomials, with the difference that they are continuous across the knots. A natural spline has an extra assumption that the second derivative of the function over the edges $k_0, k_{\kappa}$ of the association is 0. This is a something that should be considered when the goal of our research is to forecast future outcomes, as for instance in longitudinal or time series studies. 
+When using splines, the real underlying shape is not known or we don't want to assume it is known, therefore, we explore it. However, information over the position of the knots and their number may be also unknown. Thus, we can introduce even more flexibility into our model by fitting smoothing splines. Smoothing splines by-pass the problem of knot selection by shrinking the coefficients to their basis expansion, which is a piecewise polynomial. In order to do so, they minimise the penalised least squares criterion or equivalently the maximum likelihood criterion with an extra parameter representing the wingliness of the line, 
+$MLE + \lambda\int_0^1[f^{''}(x)]^2 dx$ equivalently $|| y - X\beta ||^2 + \lambda\int_0^1[f^{''}(x)]^2 dx$ or in algebraic form $|| y - X\beta ||^2 + \lambda\beta^TS\beta$.
 
 *Unknown functional form and known $\kappa = 0$ knots (global function)*
 
@@ -326,13 +319,18 @@ Fractional polynomials [@Royston_1994] are an extension of polynomials, that als
   * Study-wise FP2, the best FP2 is selected for each study
   * Study wise selected FP, where the best fitting FP is extracted per study
 
+*Known functional form and known $\kappa \geq 1$ knots and known position of the knots (segmented functions)*
 
-*Unknown functional form and known knots * 
+  * Piecewise-polynomials with $\kappa$ knots 
+    $$f_1 = \sum_{k =1}^{ k= \kappa}f_{1\kappa}(X_{x_{k-1} \leq X < x_{k-1}} ) f_2 =  \sum_{k =1}^{k= \kappa}f_{2\kappa}(X_{x_{k-1} \leq X < x_{k-1}} )$$
+Piecewise-polynomials mostly used are piecewise constant, linear, quadratic and cubic. 
 
-Splines are a generalisation of piecewise polynomials and can offer great flexibility to explore the shape of the outcome-effect modifier association. Regression splines of **p** degree should be continuous, have **p-1** continuous derivatives and the $p^{th}$ derivative should constant across the knots. They are quite similar to piecewise polynomials, with the difference that they are continuous across the knots. A natural spline has an extra assumption that the second derivative of the function over the edges $k_0, k_{\kappa}$ of the association is 0. This is a something that should be considered when the goal of our research is to forecast future outcomes, as for instance in longitudinal or time series studies. 
-When using splines, the real underlying shape is not known or we don't want to assume it is known, therefore, we explore it. However, information over the position of the knots and their number may be also unknown. Thus, we can introduce even more flexibility into our model by fitting smoothing splines. Smoothing splines by-pass the problem of knot selection by shrinking the coefficients to their basis expansion, which is a piecewise polynomial. In order to do so, they minimise the penalised least squares criterion or equivalently the maximum likelihood criterion with an extra parameter representing the wingliness of the line, 
-$MLE + \lambda\int_0^1[f^{''}(x)]^2 dx$ equivalently $|| y - X\beta ||^2 + \lambda\int_0^1[f^{''}(x)]^2 dx$ or in algebraic form $|| y - X\beta ||^2 + \lambda\beta^TS\beta$.
+*Known functional form and known $\kappa = 0$ knots (global functions)*
 
+  * Global-polynomials: 
+  
+  $$f_1 =  \sum_{\pi=1}^{\pi=p} \beta_{1\pi} \times X^{\pi}$$ $$ f_2 = \sum_{\pi=1}^{\pi=p} \beta_{2\pi} \times X^{\pi}$$
+    - Global polynomials typically are limited to either linear, Quadratic or Cubic, but can go to higher degrees.
 
 #### 3.3.1.2 Second-stage combination of the first stage results
 
@@ -342,6 +340,16 @@ Another suggested pooling method is to pool the fitted functions. For each x in 
 
 
 ### 3.3.2. One-stage approaches
+
+#### 3.3.2.2 Multilevel Fractional polynomials
+
+Fractional polynomials may be used using one stage approach [@Long_2010,  @Johnson_2012]. In this case, we use the same set of powers as in the FSP method. Furthermore, we fit a mixed effect model of our choice, with either stratified, fixed or random effects. For model selection we can use the lowest deviance or the Akaike Information Criterion (AIC) [@Akaike_1974], or Bayesian Information Criterion (BIC) [@Schwarz_1978]. 
+
+Therefore, the statistical model applied is:
+
+$g(Y_{ij}) = FP_{1j}(X)  + FP_{2j}(X) \times Treatment$
+
+
 #### 3.3.2.1 Centred One-stage IPD-MA
 
 We follow recent recommendations [@Hua_2016, @Legha_2018 ] and centre per trial the effect modifier. This way we can separate the within and across trial information of the effect modification. As in the two stage methods we can fit piecewise and global polynomials, but using a mixed-effect model to account for within trials clustering.
@@ -354,14 +362,6 @@ The $\hat f_{1j}$ and $\hat f_{2j}$ can be either piecewise polynomials, global 
 
 For the $\beta_{1kpj}$ and $\beta_{2kpj}$ we can assume, either fixed (common) effect, fixed effect*s* (stratified betas), or random effects. If we choose the fixed effect approach a common beta is assumed, in the stratified approach j betas will be generated which correspond to the per trial beta, while in the random effects we assume that the per trial coefficients are driven from a common Normal distribution N($b, \sigma^2$). 
 
-#### 3.3.2.2 Multilevel Fractional polynomials
-
-Fractional polynomials may be used using one stage approach [@Long_2010,  @Johnson_2012]. In this case, we use the same set of powers as in the FSP method. Furthermore, we fit a mixed effect model of our choice, with either stratified, fixed or random effects. For model selection we can use the lowest deviance or the Akaike Information Criterion (AIC) [@Akaike_1974], or Bayesian Information Criterion (BIC) [@Schwarz_1978]. 
-
-Therefore, the statistical model applied is:
-
-$g(Y_{ij}) = FP_{1j}(X)  + FP_{2j}(X) \times Treatment$
-
 \newpage
 
 ##### 
@@ -371,8 +371,6 @@ $g(Y_{ij}) = FP_{1j}(X)  + FP_{2j}(X) \times Treatment$
 We will illustrate the results of the aforementioned approaches beginning with the more exploratory to the more confirmatory methods. Therefore, we will start with the tree-based approach and smoothing splines, as we believe that these should be the first exploratory steps. Subsequently, we will show the results of FPs and we end with generalised linear models.
 
 ## GLMM-Trees
-
-### FIGURE.1 MPLA MPLA
 
 In the Gevers et al . data-set we increased the level of significance into $\alpha$ =0.3 , due to small sample size per trial.
 
@@ -387,9 +385,12 @@ plot(tree, which = "tree",main = "")
 include_graphics("Figs/SomatostatinTree.png")
 ```
 
+**Figure.1 GLMM-tree for the liver data set**
+
+
 We show that there is a difference between the treatment effects of males and females. Furthermore, age seems to be an effect modifier in the subgroup of females (cut-point at 46 years).
 
-### FIGURE.2 MPLA MPLA
+
 
 ```{r glmer tree AOM , eval=FALSE }
 tree  = glmertree(poutcome ~treat |(1|study) | bilat_0 + age+  gender,
@@ -403,33 +404,55 @@ plot(tree, which = "tree",main = "Rovers et al")
 include_graphics("Figs/AOMTree.png")
 ```
 
+
+**Figure.2 GLMM-tree for the acute otitis media data set**
+
 On the Rovers et al., dataset  we show that age is a potential effect modifier and we may also have a three-way interaction with bilateral otitis.
 
 ## Regression-based approaches
 
-We will show the results for each approach, first when performing a two-stage and then when using a one-stage method. The somatostatin data set provided trials with few participants, see table 1. For instance, Caroli et.al had only 1 female participant in the somatostatin group. On the other hand, Keimpema et al. and Hogan et al. had limited participation of men. Therefore, the two-stage approaches were limited to linear assumptions, and suffered from trial dropouts.
+We will show the results for each approach, first when performing a two-stage and then when using a one-stage method. The liver disease data set contained trials with limited number of participants, see table 1. For instance, Caroli et.al had only 1 female participant in the somatostatin group. On the other hand, Keimpema et al. and Hogan et al. had limited participation of men. Therefore, the liver data set was impossible to be analysed using two-stage approaches, for the three-way interaction we observed above. We present only the acute otitis media approach.
 
+Before starting applying regression based techinques to model or identify interactions, we suggest to plot the data using a locally estimated scatterplot smoothing (loess) approach, in order to have a first touch with the variables and how they are associated.
+
+```{r}
+ggplot(somatostatin, aes(y= dif_liver_perc, x = Age, color = Drug)) + 
+  geom_point() + scale_color_lancet() + theme_bw() +
+  geom_smooth(se = F,span = 2)
+
+
+ggplot(IPDMA[-is.na(IPDMA$bilat_0 ),], aes(y= poutcome , x = age, color = treat)) + 
+  geom_point(position=position_jitter(height=0.03, width=0))  +
+  geom_smooth(method="loess", alpha=0.2, size=1)+ ylab("Pr (Fever after 3/7 days)")+ 
+  scale_color_lancet() + theme_bw()
+
+
+```
+
+We can see a linear association in the liver data set, while in the acute otitis media data set a quadratic.
 
 ## Two-stage smoothing splines 
 
-In contrast with linear regression models, in smoothing spline models we cannot interpret the shape of the regression line from the summary. Therefore, visualization is an important tool to investigate effect modification. We show that women younger than 57 have a treatment benefit, probably due to menopause.
+In the acute otitis media data-set we had convergence problems and some results were unrealistic... *Interactions are problematic. This approach is difficult and needs more attention*.
 
-```{r Two-Stage smoothing splines in Somatostatin, eval=FALSE }
+```{r Two-Stage smoothing splines in AOM, message=FALSE, warning=FALSE , eval = FALSE }
 
-# this is really not the best fitting model for the data:
+studies =  unique(IPDMA[IPDMA$study != "Little" & IPDMA$study != "Appelman" ,]$study) 
+ymat <- matrix(NA,length(studies),
+               8,dimnames=list(studies,c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")))
 
-ymat <- matrix(NA,length(unique(somatostatin$Study)),
-               8,dimnames=list(unique(somatostatin$Study),c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")))
-Slist <- vector("list",length(unique(somatostatin$Study)))
-names(Slist) <- unique(somatostatin$Study)
 
-for(i in unique(somatostatin$Study)) {
-    
+Slist <- vector("list",length(studies))
+names(Slist) <- studies
+
+for(i in studies){
     # LOAD study
-    data <- somatostatin[somatostatin$Study == i ,]
-
+    data <- IPDMA[IPDMA$study == i ,]
+    if( i == "Damoiseaux") data$age =  jitter(data$age)
+    data$Agesq =  (data$age)^2
     # RUN THE MODEL
-    model <- lm(paste(" dif_liver_perc ~Drug *",I(lm$trafo$formula[1]),"* Gender" ), data = data)
+    model <- gam(poutcome ~ treat*bilat_0 + s(age) + s(age,by = treat) + s(age,by = bilat_0), 
+                 data=data, discrete=TRUE, family = binomial("log"))
     
     # EXTRACT AND SAVE THE RELATED COEF AND VCOV
     ymat[i,] <- model$coefficients
@@ -440,38 +463,14 @@ out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 
 betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
-row.names(out) <-row.names(vcov) <- row.names(betas) <- c("Intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
-kable(out, format = "pandoc")
+row.names(out) <-row.names(vcov) <- row.names(betas) <-  c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")
+kable(out, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")
 
-a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:2 )
-a
-
-
-
-par(mfrow=c(2,1), cex=0.75)
-plot_diff(m1, view='Age',cond = list(Gender="Male") , comp=list(Drug=c("placebo", "somatostatin")), 
-    rm.ranef=F, col = "darkblue",print.summary = F, main = "Men", 
-    xlab = "Age (in years)",
-    ylab = "Estimated treatment difference")
-
-plot_diff(m1, view='Age',cond = list(Gender="Female") , comp=list(Drug=c("placebo", "somatostatin")), 
-    rm.ranef=F, col = "darkgreen",print.summary = F, main = "Women",
-    xlab = "Age (in years)",
-    ylab = "Estimated treatment difference ")
-
-```
-
-
-In the acute otitis media data-set we show that children 0-5 years have a treatment benefit.
-
-```{r Two-Stage smoothing splines in AOM, message=FALSE, warning=FALSE }
-
-# Note: this is really not the best fitting model for the data:
-m1 <- gam(poutcome ~ bilat_0 * treat*age + s(age, by = treat) + 
-            s(age,study,bs = "re") + 
-            s(bilat_0,study,bs = "re") + 
-            s(treat,study,bs="re") ,
-          data=IPDMA, discrete=TRUE, family = binomial("log"))
 
 
 par(mfrow=c(2,1), cex=0.75)
@@ -501,7 +500,7 @@ plot_smooth(m1, view = "age", rm.ranef = F, plot_all = c("study"))
 
 ##  One-stage smoothing splines
 
-
+In contrast with linear regression models, in smoothing spline models we cannot interpret the shape of the regression line from the summary. Therefore, visualization is an important tool to investigate effect modification. We show that women younger than 57 have a treatment benefit, probably due to menopause.
 
 ```{r One-Stage smoothing splines in Somatostatin }
 
@@ -530,17 +529,18 @@ plot_diff(m1, view='Age',cond = list(Gender="Female") , comp=list(Drug=c("placeb
 ```{r One-Stage smoothing splines in AOM, message=FALSE, warning=FALSE, eval = FALSE }
 
 # Note: this is really not the best fitting model for the data:
-m1 <- gamm(poutcome ~ bilat_0*treat*age, random = list(study = ~1 + age + treat ) , 
-           data=IPDMA, discrete=TRUE, family = binomial("log"))
-
+m1 <- bam(poutcome ~bilat_0*treat*age + s(age) + 
+            s(study,age,bs = "re") + 
+            s(study,bilat_0,bs = "re") + 
+            s(study,treat,bs="re") , data = IPDMA,method="REML" ,  discrete=TRUE)
 
 par(mfrow=c(2,1), cex=0.75)
-plot_diff(m1$gam, view='age',cond = list(bilat_0="No") , 
+plot_diff(m1, view='age',cond = list(bilat_0="No") , 
           comp=list(treat=c("Placebo", "Antibiotics")), 
           rm.ranef=TRUE, col = "darkblue",print.summary = F, main = "Children with unilateral otitis media", 
           xlab = "Age (in years)", ylab = "Estimated difference (log-scale)")
 
-plot_diff(m1$gam, view='age',cond = list(bilat_0="Yes") , comp=list(treat=c("Placebo", "Antibiotics")), 
+plot_diff(m1, view='age',cond = list(bilat_0="Yes") , comp=list(treat=c("Placebo", "Antibiotics")), 
     rm.ranef=TRUE, col = "darkgreen",print.summary = F, main = "Children with bilateral otitis media",
     xlab = "Age (in years)",
     ylab = "Estimated difference (log-scale)")
@@ -588,10 +588,18 @@ out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
 row.names(out) <-row.names(vcov) <- row.names(betas) <- c("Intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
-kable(out, format = "pandoc")
+kable(out, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")
 
 a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:2 )
-a
+al =  data.frame( t(a$result$chi2), row.names = NULL)
+
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
+  kable_as_image()
 
 
 ```
@@ -632,16 +640,25 @@ out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
 row.names(out) <-row.names(vcov) <- row.names(betas) <-  c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")
-kable(out, format = "pandoc")
+kable(out, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")%>%
+  kable_as_image()
 
 
 a= wald.test( b = betas[grep("Treatment x FP" ,rownames(betas)), 1], varb = vcov[grep("Treatment x FP" ,rownames(vcov)),grep("Treatment x FP" ,rownames(vcov))],Terms = 1:3 )
-a
+al =  data.frame( t(a$result$chi2), row.names = NULL)
+
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
+  kable_as_image()
 
 
 ```
 
-We couldn't show that age is an effect modifier on 0.05 $\alpha$.
+We couldn't show that age is an effect modifier on 0.05 $\alpha$ significance level.
 
 
 ## Study-wise FP2, the best FP2 is selected for each study
@@ -677,7 +694,12 @@ for(i in unique(somatostatin$Study)){
 out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 
 row.names(out) <- c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
-kable(out, format = "pandoc")
+kable(out, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")
 ```
 
 
@@ -711,25 +733,32 @@ for(i in unique(IPDMA$study)) {
 out <- summary(mvmeta(ymat, Slist,method = "reml" ))$coef
 
 row.names(out) <- c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")
-kable(out, format = "pandoc")
+kable(out, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")
 
 
 a= wald.test( b = betas[grep("Treatment x FP" ,rownames(betas)), 1], varb = vcov[grep("Treatment x FP" ,rownames(vcov)),grep("Treatment x FP" ,rownames(vcov))],Terms = 1:3 )
-a
+al =  data.frame( t(a$result$chi2), row.names = NULL)
+
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
+  kable_as_image()
 ```
 
 
 *Study wise selected FP, where the best fitting FP is extracted per study*  
   
-The best fitting FPs for the somatostatin  per trial were linear, so the analysis is identical with the two-stage global polynomial.
+The best fitting FPs for the somatostatin per trial were linear, so the analysis is identical with the two-stage global polynomial.
 
 *Two-stage Global polynomials (coefficient pooling)*
 
 For the Gevers et al. data-analysis, we assumed a linear functional form, as we had limited data (108 observations) and spending $2 \times p$ (degree of polynomial) $\times  J$ (trial number) was considered inefficient. Furthermore, the initial pooled plot showed no significant non-linearity. In contrast, for the Rovers et al. we observed an overall quadratic shape. Damoiseaux et al. had age rounded and the participants were only 1- and 2-years old children. To avoid non-convergence of the log-binomial models we created a slight artificial deviation for the Damoiseaux et al. using the **jitter()** command.
 
-In two-stage meta-analysis using linear assumptions, effect modification across age was not statistically significant. 
 
-```{r Gasparini approach with mvmeta  for somatostatin, eval=FALSE}
+```{r Gasparini approach with mvmeta  for somatostatin }
 # BUILT OBJECTS WHERE RESULTS WILL BE STORED:
 #   ymat IS THE MATRIX FOR THE OUTCOME PARAMETERS
 #   Slist IS THE LIST WITH (CO)VARIANCE MATRICES
@@ -756,17 +785,31 @@ out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
 vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
 row.names(out) <-row.names(vcov) <- row.names(betas) <- c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
-kable(out, format = "pandoc")
+
+kable(out, format = "latex", booktabs = T)%>%
+  kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+  column_spec(1, bold = T, width = "10em") %>%
+  column_spec(2, width = "10em")%>%
+  column_spec(3, width = "6em")%>%
+  column_spec(4, width = "10em")%>%
+  kable_as_image()
 
 a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:2 )
-a
 
+al =  data.frame( t(a$result$chi2), row.names = NULL)
+
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
+  kable_as_image()
 
 ```
 
-
-
-For the Gevers et al the two-stage meta-analysis of interaction terms showed no statistically significant results. 
+For the liver data set the two-stage meta-analysis of interaction terms showed no statistically significant results. The reason we the same as in splines and FPs. The per trial `r kable(ymat, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")%>%
+  kable_as_image()` coefficients 
 
 Little et al had no bilateral information. The study was dropped.
 
@@ -803,26 +846,34 @@ out <- summary(mvmeta(ymat, Slist,method = "fixed" ))$coef
 betas =  summary(mvmeta(ymat, Slist,method = "fixed" ))$coef
 vcov  = vcov(mvmeta(ymat, Slist,method = "fixed"  ))
 row.names(out) <-row.names(vcov) <- row.names(betas) <- c("Intercept","Treatment","Age","Bilateral","Age^2","Treatment x Age","Treatment x Bilateral","Age x Bilateral", "Treatment x Age^2","Age^2 x Bilateral", "Treatment x Age x Bilateral", "Treatment x Age^2 x Bilateral")
-kable(out, format = "pandoc")
+kable(out, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")%>%
+  kable_as_image()
+
 
 a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:4 )
-a
+al =  data.frame( t(a$result$chi2), row.names = NULL)
 
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
+  kable_as_image()
 
 ```
 
 *One-stage IPD-MA*
 
 ```{r}
-library(lmerTest)
-
 lmLinear <- lmer(dif_liver_perc ~ Drug * Age*Gender + (Drug|Study) + (1|Study) ,
                  data = somatostatin , 
                  control = lmerControl(calc.derivs = F))
 
 
 IPDMA$bilateral = factor(IPDMA$bilat_0 , labels = c("Unilateral acute otitis","Bilateral acute otitis" ),  levels = c("No","Yes") )
-glmLinear <- glmer(poutcome ~ treat * poly(age)*bilateral + (treat|study) + (1|study) , 
+
+glmLinear <- glmer(poutcome ~ treat *age*bilateral + (treat|study) + (1|study) , 
                    family = binomial("log"),data = IPDMA )
 ```
 
@@ -838,15 +889,26 @@ colnames(out)<- c("Estimate","Std. Error","t value","P-value")
 
 row.names(out) <- c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
 
-kable(out, format = "pandoc")
-
-
+kable(out, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")%>%
+  kable_as_image()
 
 out <- summary(glmLinear)$coef
 colnames(out)<- c("Estimate","Std. Error","t value","P-value")
 
-row.names(out) <- c("Intercept","Treatment","Age","Age^2","Treatment x Age","Treatment x Age^2")
-kable(out, format = "pandoc")
+row.names(out) <- c("Intercept","Treatment","Bilateral","Age","Age^2","Treatment x Age","Treatment x Age^2")
+
+kable(out, format = "latex", booktabs = T)%>%
+kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
+column_spec(1, bold = T, width = "10em") %>%
+column_spec(2, width = "10em")%>%
+column_spec(3, width = "6em")%>%
+column_spec(4, width = "10em")%>%
+  kable_as_image()
 
 
 ```
@@ -980,10 +1042,6 @@ ggplot(IPDMA, aes(x=age, y=poutcome, color= treat)) + geom_point() +
   labs(title = "Scatterplot of AOM data-set",y = "Fever/Pain after 3/7 days probability ",x = "Age")
 
 ```
-
-
-
-
 
 
 \newpage
