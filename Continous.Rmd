@@ -142,16 +142,17 @@ We conclude that subgroup detection in IPD-MA requires knowing the underlying as
 # 1. Introduction
 
 
-Individual participant data meta-analysis (IPD-MA) is a type of systematic review where data gathered from multiple studies are combined and analysed centrally. The capability to standardise subgroup definitions and outcomes across studies, the increased power to investigate other than linear associations, the increased validity and reliability of the subgroups and the flexibility to search for subgroups based on combinations of patient and/or disease characteristics are some of the benefits of using IPD of multiple trials rather than traditional (aggregate) meta-analysis. A vivid field of research towards personalised healthcare is the investigation of effect modification. For this, IPD-MA is considered the gold standard as single trials rarely have sufficient power to identify relevant effect modification.
-Effect modification may be present in both categorical and/or continuous covariates. For instance, differences in the treatment effect may be present between smokers and non-smokers, or across the levels of the age of the patients. If subgroups are already predefined it may be sufficient to only conduct hypothesis testing, using statistical tools such as generalised linear models or generalised linear mixed-effects models with interaction terms included, combined with meta-analytical tools. However, effect modification across a continuous variable is more challenging, because if the possible subgroups still have to be detected. In that situation, we may need to evaluate effect modification and at the same time want to define a threshold from which point the treatment effect is relevantly different.
-A common technique to explore subgroups is by starting with the categorization of the continuous covariate. If subgroups are created based on good prior knowledge from literature then this approach is valid. Then, we can proceed as if we had a categorical variable. Nevertheless, categorization has been criticised for misspecification, loss of information and power, inflation of the type I error rate and even biased results[@Royston_2005 ; @Altman_2006 ; @Austin_2004 ; @Maxwell_1993 ; @Weinberg_1995].Another common practice is using the covariable as it is, but assuming linearity over the link function, a method that may also lead to deterioration of power, misspecification, and even spurious results [@J_rgensen_2016]. Therefore, it is important to explore the functional form of the association between outcome and effect modifier. Various approaches to account for non-linear associations have been developed, such as splines and fractional polynomials (FP) [@Sauerbrei_2011, @royston_interaction_2013]. 
-\par      Regression based approaches such as linear models, piecewise polynomials, FPs and smoothing splines may be performed either in one or two stages. In a two-stage approach, first each trial is modelled separately using an appropriate statistical model. Subsequently, we pool either the extracted coefficients if shared across the trials or their fitted functions, using standard meta-analytical tools. In contrast, in one-stage IPD-MA the IPD from all trials are analysed simultaneously whilst accounting for the clustering of participants within studies. Hereto, we model interactions between treatment and patient-level variables while accounting also for the shape of the associations with the outcome. Recent recommendations suggest mean-centring the potential effect modifiers per trial in order to account for potential ecological bias due to unadjusted confounding. In such a one-stage model, within-trial clustering can be accounted for using either a fixed effect (common intercept/slope), fixed effects (stratified intercept/slope), or random effects [@Legha_2018]. Other methods to explore effect modification are plot- and tree-based methods such as the generalised linear mixed-effects model tree (GLMM-tree) method  [@Wang_2016]or meta-stepp, a plot based moving average (sliding window) method. Clinical decision making is often based on subgroup categories, separated by cut-points where the treatment effect is changing. The full association between the outcome and the continuous effect modifier is most informative and should be the start for the definition of these cut-points. Still, the locations of these cut-points are not straightforward. They may be based on point estimates or confidence intervals of the treatment effect function, i.e. the difference between the two treatments over the range of the covariable [@Royston_2008]. Interaction term analysis [@Sun_2010] may also be a suitable alternative.  
-\par        Given all these methods, it is often unclear which method should be preferred in which situation. We aim to describe and illustrate the aforementioned methods by applying them on two empirical examples, while discussing the pros and cons. 
+Individual participant data meta-analysis (IPD-MA) is a type of statistical analysis, where data are gathered from multiple studies are combined and analysed   The capability to standardise subgroup definitions and outcomes across studies, the increased power to investigate other than linear associations, the increased validity and reliability of the subgroups and the flexibility to search for subgroups based on combinations of patient and/or disease characteristics are some of the benefits of using IPD of multiple trials rather than traditional (aggregate) meta-analysis [@Debray_2015;@Maroeska_2012;@Tierney_2015]. A vivid field of research towards personalised healthcare is the investigation of effect modification. For this, IPD-MA is considered the gold standard as single trials rarely have sufficient power to properly detect effect modification. 
+ Effect modification may be present in both categorical and/or continuous covariates. For instance, differences in the treatment effect may be present between smokers and non-smokers, or across the age of the patients. If subgroups have been predefined, hypothesis testing may be performed using traditional regression-based methods. For single trials, this typically involves the estimation of (linear) interaction terms between treatment and the modifier of interest. In an IPD-MA, these interaction effects may be estimated either separately within studies and subsequently be pooled across studies (two-stage IPDMA), or directly across all studies (one-stage IPDMA. 
+However, effect modification across continuous variables is more challenging, since we may need to evaluate effect modification and at the same time want to define a threshold from which point the treatment effect is relevantly different. Categorization is a common technique to investigate effect modification, by splitting the continuous covariate into subgroups. Nevertheless, these subgroups should always be created based on good prior knowledge from literature. If so, this approach may provide meaningful insight into effect modification. 
+Nevertheless, categorization has been criticised for misspecification, loss of information and power, inflation of the type I error rate and even biased results [@Royston_2005 ; @Altman_2006 ; @Austin_2004 ; @Maxwell_1993 ; @Weinberg_1995].Another common practice is using the covariable as it is, but assuming linearity over the link function, a method that may also lead to deterioration of power, misspecification, and even spurious results [@J_rgensen_2016]. Ideally, when continuous covariates are included, we would like to account for their functional form while simultaneously making inferences over the presence of the effect modification. Furthermore, although the association between the outcome and the continuous effect modifier is highly informative, clinical decisions are based on subgroups of participants the differ in treatment response. Finally, subgroups generated from continuous variables are defined by the cut-points were the treatment effect is considered to change. These cut-points may be based on the treatment effect function [@Royston_2008], i.e. the difference between the two treatments over the range of the covariable or the treatment-effect modifier interaction terms [@Sun_2010]. For this, various approaches to account for non-linear associations have been developed, such as splines and fractional polynomials (FP) [@Sauerbrei_2011, @royston_interaction_2013]. 
+\par      For IPD-MA, regression-based approaches such as linear models, piecewise polynomials, FPs and smoothing splines may be performed either in one or two stages. In a two-stage approach, first each trial is modelled separately using an appropriate statistical model. Subsequently, we pool either the extracted coefficients if shared across the trials or their fitted functions, using standard meta-analytical tools. In contrast, in one-stage IPD-MA the IPD from all trials are analysed simultaneously whilst accounting for the clustering of participants within studies and the potential of ecological bias  . Hereto, we model interactions between treatment and patient-level variables while accounting also for the shape of the associations with the outcome. Recent recommendations suggest mean-centring the potential effect modifiers per trial in order to account for potential ecological bias due to unadjusted confounding. In such a one-stage model, within-trial clustering can be accounted for using either a fixed effect (common intercept/slope), fixed effects (stratified intercept/slope), or random effects [@Legha_2018]. Other methods to explore effect modification are plot- and tree-based methods such as the generalised linear mixed-effects model tree (GLMM-tree) method [@Wang_2016] or meta-stepp, a plot based moving average (sliding window) method. 
+\par        Although there is a large variety of methods to explore effect modification for continuous covariates, little guidance exists on their use. We aim to describe and illustrate the aforementioned methods by applying them on two empirical examples, while discussing their (potential) advantages and limitations.
 
 # 2. Empirical examples
 
-  We use 2 IPD-sets to illustrate our methods. The first data-set [@Rovers_2006] was investigating the effect of antibiotics in acute otitis media on children aged from 0 to 12 years old. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no). They concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were investigated also separately for potential effect modification and only bilateral acute otitis media showed a significant result.
-The second data-set [@Gevers_2013] was used to investigate the effect of Somatostatin on liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. In this example, the outcome was continuous (liver volume reduction), and age, sex, baseline liver volume, and diagnosis of either autosomal dominant polycystic liver or kidney disease were investigated for effect modification. They concluded that use of Somatostatin was more beneficial for younger (<47) female patients. One of the 3 trials had a cross-over design, therefore participants were treated both with the active and the control treatment in different time periods. In order to use these data for our illustrative purposes, we removed the cross-over design and used all patients only once, by selecting half of the patients from the active period and the other half (sex and age-matched) from the control period. Therefore, differences between our results and those reported in the original article will occur.
+\par        We use 2 IPD-sets to illustrate aforementioned methods. The first empirical example [@Rovers_2006] considers an IPD-MA where the effect of antibiotics in acute otitis media was investigated in children. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no).  They concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were investigated also separately for potential effect modification and only bilateral acute otitis media showed a significant result. 
+The second empirical example [@Gevers_2013] considers an IPD-MA to investigate the effect of Somatostatin on liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. In this example, the outcome was continuous (liver volume reduction), and age, sex, baseline liver volume, and diagnosis of either autosomal dominant polycystic liver or kidney disease were investigated for effect modification . They concluded that use of Somatostatin was more beneficial for younger (<47) female patients. One of the 3 trials had a cross-over design, therefore participants were treated both with the active and the control treatment in different time periods. In order to use these data for our illustrative purposes, we removed the cross-over design and used all patients only once, by selecting half of the patients from the active period and the other half (sex and age-matched) from the control period. Therefore, differences between our results and those reported in the original article may occur.
 
 ```{r}
 b = somatostatin %>%
@@ -239,14 +240,13 @@ kable(final, format = "latex",
 # 3. Methods
 ## 3.1 Notation
 
-As described in section 2, both our datasets are composed of multiple trials. Therefore, we introduce some notation that will be used hereto.
-We are denoting:
+As described in section 2, both empirical example datasets are composed of multiple randomised trials. We will adopt the following notation throughout our manuscript:
 
 
-* The studies as j = 1,2, ...,J, 
-* Individuals as i = 1,2, ...,I, 
-* The per trial mean of age as  $\bar{Age_j}$
-* The per trial centred age as $X_j$ = $\bar{Age_j} - Age_{ij}$
+* The trials as j = 1,2, ...,J, 
+* Trial participants as i = 1,2, ...,I, 
+* The per trial mean of age as $\bar{Age_j}$
+* The per trial centred age as $X_{ij}$ = $\bar{Age_j} - Age_{ij}$
 * Cut-point (knot) as  $\kappa$
 * The degree of a fractional polynomial as m
 * The degree of a polynomial as p
@@ -254,15 +254,15 @@ We are denoting:
 
 ## 3.2. Recursive-partitioning (tree-based) methods 
 
-Recursive partitioning can be a first step to explore the underlying structure of the data, such as whether there are outcome differences across the levels of a continuous or categorical variable. It is a statistical method typically used in multivariable analysis [@Breiman_2017]. A decision tree is generated by dichotomising the variable by cut-points creating subgroups. These subgroups are generated such that they have the highest difference in outcome. Recursive partitioning techniques can handle non-linear associations as they make no functional form assumptions. However, splitting the data-set into groups is a process that is sensitive to minor changes in the data, which may lead to completely different trees. 
-\par  The Generalised linear mixed model (GLMM) tree approach is a state-of-the-art technique using a model-based recursive partitioning [@Zeileis_2008;  @Su_2009] algorithm. It was proposed by Fokkema et al. [@Fokkema_2017] to detect treatment-effect modifier interactions when we have clustered data, as in IPD-MA, where the participants are clustered within the trials. Since this approach is exploratory, we can play with the significance level $\alpha$ for detecting subgroups, to be more or less liberal. Furthermore, we can use GLMM-trees to detect the possibly relevant variables, their crude cut-points and their underlying subgroups. If GLMM-tree results in subgroups, we can evaluate the corresponding variable using a more sophisticated approach.  For example, if we identify age and gender as subgrouping variables using the GLMM-tree, we can use a regression technique to model this relationship.
-\par  The GLMM tree algorithm (1) starts by fitting a regression model with interaction terms (treatment x subgroup variables) included (2) statistically tests the interaction terms using a user-defined α, i.e. whether treatment is modified with respect to the subgroup variables, then (3) if test indicates modification, splits the dataset in order to create 2 subgroups with the largest difference in treatment effect. This procedure is (4) repeated in each of the resulting subgroups, until a user-defined convergence is achieved.
+Recursive partitioning can be a first step to explore the underlying structure of the data, such as whether there are outcome differences across the levels of a continuous or categorical variable. It is a statistical method typically used in multivariable analysis[@Breiman_2017]. A decision tree is generated by dichotomising the variable by cut-points, thus creating subgroups where the treatment effect is altered. Recursive partitioning techniques can handle non-linear associations as they make no functional form assumption a-priori. 
+\par          Splitting the data-set into subgroups is a sensitive process though. Therefore, it is highly important to account for within trial clustering of the participants. The Generalised linear mixed model (GLMM) tree approach is a state-of-the-art technique using a model-based recursive partitioning [@Zeileis_2008;  @Su_2009] algorithm. It was proposed by Fokkema et al. [@Fokkema_2017] to detect treatment-effect modifier interactions in the presence of clustered data, as is the case in IPD-MA. Since this approach is exploratory, we can play with the significance level $\alpha$ for the splitting criterion, to be more or less liberal. Furthermore, we can use GLMM-trees to detect the possibly relevant variables, their crude cut-points and their underlying subgroups. If GLMM-tree results in subgroups, we can evaluate the corresponding variable using a more sophisticated approach. For example, if we identify age and gender as subgrouping variables using the GLMM-tree, we can use a regression technique to model this relationship. The GLMM tree algorithm (1) starts by fitting a regression model with interaction terms (treatment x subgroup variables) included (2) statistically tests the interaction terms using a user-defined α, i.e. whether treatment is modified with respect to the subgroup variables, then (3) if test indicates modification, splits the dataset in order to create 2 subgroups with the largest difference in treatment effect. This procedure is (4) repeated in each of the resulting subgroups, until a user-defined convergence is achieved.
 
 
 
 ## 3.3 Regression based approaches
 
-In regression-based approaches it is important to model the appropriate functional form of the association between the effect modifier and the outcome. If the appropriate form is already known, modelling will be straightforward. However, if not, splines and/or fractional polynomials may be used to evaluate the functional form of the association. Another aspect to take into consideration while modelling the functional form, is whether there may be cut-points (knots) where the shape of the association changes. If these exist, this should be also taken into consideration. Again, if the cut-points are known, modelling will be more straightforward than when they are unknown. These two dimensions define how to proceed with the regression model.  
+\par        In regression-based approaches it is important to specify an appropriate functional form for the association between the effect modifier and the outcome. If the functional form is known a priori (e.g. linear, log-linear), modelling is fairly straightforward. However, if the functional form is not properly be predefined, splines and/or fractional polynomials may be used to evaluate the functional form of the association. 
+\par        When using segmented functions, another concern is the selection and placing of the cut-points (knots), which are used to model changes in the shape of the association. The location and number of knots could be either predefined or estimated. In first case, we split the variable in these knots and fit an appropriate polynomial regression within. In the later, we may either use cross-validation or penalised maximum likelihood approaches. 
 
 ```{r, out.height="80%", out.width="80%"}
 include_graphics("Figs/Assumption.png")
@@ -272,7 +272,7 @@ include_graphics("Figs/Assumption.png")
 include_graphics("Figs/TypesOfMethods.png")
 ```
 
-Finally, within-trial clustering should be accounted for[@Abo_Zaid_2013]. This may be achieved, as described in the introduction, either by conducting a two-stage meta-analysis, or by using a mixed effects models or an equivalent method in a one-stage approach. We will describe both, starting with approaches based on global functional forms as they make more assumptions, and adding gradually more flexibility with the segmented functional form approaches. We will start with the two stage and end with one-stage appaoraches, within each type of analysis we will start with splines, continue with fractional polynomials and finally describe polynomials. 
+Finally, for any regression-based approach, the presence of within-trial clustering should be accounted for [@Abo_Zaid_2013]. Below, we describe how this can be done in an IPD-MA.
 
 ```{r }
 
@@ -294,22 +294,19 @@ column_spec(4, width = "10em")
 
 ### 3.3.1. Two-stage approaches 
 
-In two-stage approaches a statistical model of choice is directly fitted per trial.
-The statistical model per trial j is as follows:
+In two-stage approaches a statistical model of choice is directly fitted per trial. The statistical model per trial j is as follows:
 
 $$g(Y_{ij}) = \hat f_{1j}(X)  + \hat f_{2j}(X) \times Treatment$$ \begin{flushright} [1] \end{flushright}
 
-Subsequently, we can either pool the coefficients or the fitted functions using typical meta-analytical tools. 
+Subsequently, we can either pool the coefficients or the fitted functions using typical meta-analytical tools.
 
 #### 3.3.1.1 First stage: Per-trial modelling
 
-The functions $\hat f_{1j}, \hat f_{2j}$ are providing the functional shape of the outcome-effect modifier association per trial j for the treated and the control respectively. Depending on the a priori knowledge of the association’s functional form and the cut-points where the effect is altered we may fit.
+The functions $\hat f_{1j}, \hat f_{2j}$ are providing the functional shape of the outcome-effect modifier association per trial j for the treated and the control group respectively. Depending on the a priori knowledge of the association’s functional form and the cut-points where the effect is altered, we may either fit a generalised additive model with splines included, a fractional polynomial model or a polynomial model (including linear shapes and categorised variable). The approaches mentioned above, besides FPs, can be also performed using the continuous variable split in predefined cut-points, also called knots.
 
 *Unknown functional form and known knots * 
 
-Splines are a generalisation of piecewise polynomials and can offer great flexibility to explore the shape of the outcome-effect modifier association. Regression splines of **p** degree should be continuous, have **p-1** continuous derivatives and the $p^{th}$ derivative should constant across the knots. They are quite similar to piecewise polynomials, with the difference that they are continuous across the knots. A natural spline has an extra assumption that the second derivative of the function over the edges $k_0, k_{\kappa}$ of the association is 0. This is a something that should be considered when the goal of our research is to forecast future outcomes, as for instance in longitudinal or time series studies. 
-When using splines, the real underlying shape is not known or we don't want to assume it is known, therefore, we explore it. However, information over the position of the knots and their number may be also unknown. Thus, we can introduce even more flexibility into our model by fitting smoothing splines. Smoothing splines by-pass the problem of knot selection by shrinking the coefficients to their basis expansion, which is a piecewise polynomial. In order to do so, they minimise the penalised least squares criterion or equivalently the maximum likelihood criterion with an extra parameter representing the wingliness of the line, 
-$MLE + \lambda\int_0^1[f^{''}(x)]^2 dx$ equivalently $|| y - X\beta ||^2 + \lambda\int_0^1[f^{''}(x)]^2 dx$ or in algebraic form $|| y - X\beta ||^2 + \lambda\beta^TS\beta$.
+Splines are a generalisation of piecewise polynomials and can offer great flexibility to explore the shape of the outcome-effect modifier association. Regression splines of **p** degree should be continuous, have **p-1** continuous derivatives and the $p^{th}$ derivative should constant across the knots. They are quite similar to piecewise polynomials, with the difference that they are continuous across the knots. A natural spline has an extra assumption that the second derivative of the function over the edges $k_0, k_{\kappa}$ of the association is 0. This is a something that should be considered when the goal of our research is to forecast future outcomes, as for instance in longitudinal or time series studies. When using splines, the real underlying shape is not known or we don’t want to assume it is known, therefore, we explore it. However, information over the position of the knots and their number may be also unknown. Thus, we can introduce even more flexibility into our model by fitting smoothing splines. Smoothing splines by-pass the problem of knot selection by shrinking the coefficients to their basis expansion, which is a piecewise polynomial. In order to do so, they minimise the penalised least squares criterion or equivalently the maximum likelihood criterion with an extra parameter representing the wingliness of the line, $MLE + \lambda\int_0^1[f^{''}(x)]^2 dx$ equivalently $|| y - X\beta ||^2 + \lambda\int_0^1[f^{''}(x)]^2 dx$ or in algebraic form $|| y - X\beta ||^2 + \lambda\beta^TS\beta$.
 
 *Unknown functional form and known $\kappa = 0$ knots (global function)*
 
@@ -334,12 +331,13 @@ Piecewise-polynomials mostly used are piecewise constant, linear, quadratic and 
 
 #### 3.3.1.2 Second-stage combination of the first stage results
 
-As a second-stage in the two-stage IPD-MA, we may either pool the estimates or the fitted functions $\hat f_{1j}(X)$, $\hat f_{2j}(X)$ extracted from the first stage. The simplest approach is to pool the extracted per trial $beta_{kj}$ into one $b_k$, using a multi-variate meta-analysis, whilst assuming common effect or random effects. This approach only works when common powers are present across studies. Therefore, it is applicable in piecewise, global polynomials, and fractional polynomials fitted using the overall FP procedure. We applied a random-effects meta-analysis, using the EB method for the $\tau^2$ estimation [@Stijnen_2007] and the HKSJ adjustment [@Hartung_2001,@IntHout_2014].
-
-Another suggested pooling method is to pool the fitted functions. For each x in the data (pointwise) we calculate per study the fitted function $\hat{g_j}(x; \beta_j)$ and its standard error from $SE_j(x)$. This $\hat{g_j}(x; \beta_j)$ is the per trial predicted line or equivalently the mean expected outcome for given X E(g(x)|X) and the $S_j(x)$ is the confidence intervals of the predicted line. Afterwards, for each x in the data (pointwise), we calculate the pooled estimate $\hat{g}(x)$ and its SE(x), using either common or random-effects meta-analysis [@White_2018]. 
+As a second-stage in the two-stage IPD-MA, we either pool the estimates or the fitted functions $\hat f_{1j}(X)$, $\hat f_{2j}(X)$ extracted from the first stage. The simplest approach is to pool the extracted trial $\beta_{kj}$ into one $b_k$, using a multi-variate meta-analysis, whilst assuming a common effect or random effects   . When using random effects approach, a variety of methods is available to estimate the pooled coefficients, such as maximum likelihood, restricted maximum likelihood, method of moments or variance components. We preferred the restricted maximum likelihood, in order to be consistent with one-stage approaches. This approach only works when common powers are present across studies. Therefore, it is applicable in piecewise, global polynomials, and fractional polynomials fitted using the overall FP procedure.   
+Another suggested pooling method is to pool the fitted functions. For each x in the data (pointwise) we calculate per study the fitted function $\hat{g_j}(x; \beta_j)$ and its standard error from $SE_j(x)$. This $\hat{g_j}(x; \beta_j)$ is the per trial predicted line or equivalently the mean expected outcome for given x E(g(x)|X=x) and the $S_j(x)$ is the confidence intervals of the predicted line. Afterwards, for each x in the data (pointwise), we calculate the pooled estimate $\hat{g}(x)$ and its SE(x), using either common or random-effects meta-analysis [@White_2018]. 
 
 
 ### 3.3.2. One-stage approaches
+####3.3.2.1 ONE-STAGE SMOOTHING SPLINES
+Generalised additive models are a form of penalised generalised linear models. One type of penalization is identical to the random effects’ technique introduced by McCullagh et al. [27] in the generalised mixed effects models. There we can estimate a separate functional form per trial, given the fixed effects parameters.
 
 #### 3.3.2.2 Multilevel Fractional polynomials
 
@@ -459,10 +457,10 @@ for(i in studies){
     Slist[[i]] <- vcov(model)
   }
 
-out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
+out <- summary(mvmeta(ymat, Slist,method = "reml" ))$coef
 
-betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
-vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
+betas =  summary(mvmeta(ymat, Slist,method = "reml" ))$coef
+vcov  = vcov(mvmeta(ymat, Slist,method = "reml" ))
 row.names(out) <-row.names(vcov) <- row.names(betas) <-  c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")
 kable(out, format = "latex", booktabs = T)%>%
 kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
@@ -583,10 +581,10 @@ for(i in unique(somatostatin$Study)) {
     Slist[[i]] <- vcov(model)
   }
 
-out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
+out <- summary(mvmeta(ymat, Slist,method = "reml" ))$coef
 
-betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
-vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
+betas =  summary(mvmeta(ymat, Slist,method = "reml" ))$coef
+vcov  = vcov(mvmeta(ymat, Slist,method = "reml" ))
 row.names(out) <-row.names(vcov) <- row.names(betas) <- c("Intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
 kable(out, format = "latex", booktabs = T)%>%
 kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
@@ -635,10 +633,10 @@ for(i in studies){
     Slist[[i]] <- vcov(model)
   }
 
-out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
+out <- summary(mvmeta(ymat, Slist,method = "reml" ))$coef
 
-betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
-vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
+betas =  summary(mvmeta(ymat, Slist,method = "reml" ))$coef
+vcov  = vcov(mvmeta(ymat, Slist,method = "reml" ))
 row.names(out) <-row.names(vcov) <- row.names(betas) <-  c("Intercept","Treatment","FP(Age)","Bilateral","Treatment x FP(Age)","Treatment x Bilateral", "Treatment x FP(Age)" , "Treatment x FP(Age) x Bilateral")
 kable(out, format = "latex", booktabs = T)%>%
 kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
@@ -691,7 +689,7 @@ for(i in unique(somatostatin$Study)){
     Slist[[i]] <- vcov(model)
   }
 
-out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
+out <- summary(mvmeta(ymat, Slist,method = "reml" ))$coef
 
 row.names(out) <- c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
 kable(out, format = "latex", booktabs = T)%>%
@@ -780,10 +778,10 @@ for(i in unique(somatostatin$Study)) {
     Slist[[i]] <- vcov(model)
   }
 
-out <- summary(mvmeta(ymat, Slist,method = "ml" ))$coef
+out <- summary(mvmeta(ymat, Slist,method = "reml" ))$coef
 
-betas =  summary(mvmeta(ymat, Slist,method = "ml" ))$coef
-vcov  = vcov(mvmeta(ymat, Slist,method = "ml" ))
+betas =  summary(mvmeta(ymat, Slist,method = "reml" ))$coef
+vcov  = vcov(mvmeta(ymat, Slist,method = "reml" ))
 row.names(out) <-row.names(vcov) <- row.names(betas) <- c("intercept","Treatment","Age","Gender","Treatment x Age","Treatment x Gender", "Age x Gender", "Treatment x Age x Gender")
 
 kable(out, format = "latex", booktabs = T)%>%
