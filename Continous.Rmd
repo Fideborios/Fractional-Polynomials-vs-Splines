@@ -1,6 +1,5 @@
 ---
-title: "Overview and illustration of methods to investigate effect modification by
-  a continuous covariate"
+title: "Overview and illustration of methods to investigate effect modification by a continuous covariate"
 author: "Michail Belias"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
