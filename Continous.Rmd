@@ -336,27 +336,26 @@ Another suggested pooling method is to pool the fitted functions. For each x in 
 
 
 ### 3.3.2. One-stage approaches
-####3.3.2.1 ONE-STAGE SMOOTHING SPLINES
-Generalised additive models are a form of penalised generalised linear models. One type of penalization is identical to the random effects’ technique introduced by McCullagh et al. [27] in the generalised mixed effects models. There we can estimate a separate functional form per trial, given the fixed effects parameters.
+####3.3.2.1 Generalised additive mixed effects models
+
+Generalised additive models are a form of penalised generalised linear models. One type of penalization is identical to the random effects’ technique introduced by McCullagh et al. [@McCullagh_1983] in the generalised mixed effects models. There we can estimate a separate functional form per trial, given the fixed effects parameters.
 
 #### 3.3.2.2 Multilevel Fractional polynomials
 
-Fractional polynomials may be used using one stage approach [@Long_2010,  @Johnson_2012]. In this case, we use the same set of powers as in the FSP method. Furthermore, we fit a mixed effect model of our choice, with either stratified, fixed or random effects. For model selection we can use the lowest deviance or the Akaike Information Criterion (AIC) [@Akaike_1974], or Bayesian Information Criterion (BIC) [@Schwarz_1978]. 
+Fractional polynomials may be used using a one stage approach [@Long_2010,  @Johnson_2012]. In this case, we use the same set of powers as in the FSP method. Furthermore, we fit a mixed effect model of our choice, with either stratified, fixed or random effects. For model selection we can use the model with the lowest deviance or the Akaike Information Criterion (AIC) [@Akaike_1974], or Bayesian Information Criterion (BIC) [@Schwarz_1978]. 
 
 Therefore, the statistical model applied is:
 
 $g(Y_{ij}) = FP_{1j}(X)  + FP_{2j}(X) \times Treatment$
 
 
-#### 3.3.2.1 Centred One-stage IPD-MA
+#### 3.3.2.3 Centred One-stage IPD-MA
 
-We follow recent recommendations [@Hua_2016, @Legha_2018 ] and centre per trial the effect modifier. This way we can separate the within and across trial information of the effect modification. As in the two stage methods we can fit piecewise and global polynomials, but using a mixed-effect model to account for within trials clustering.
-Therefore, assuming that $X_{ij} = Age_{ij} - \bar Age_j$ the statistical model will be: 
+We follow recent recommendations [@Hua_2016, @Legha_2018 ] and centre per trial the effect modifier. This way we can separate the within and across trial information of the effect modification. As in the two stage methods we can fit piecewise and global polynomials, but using a mixed-effect model to account for within trials clustering. Therefore, assuming that $X_{ij} = Age_{ij} - \bar Age_j$, the statistical model will be: 
 
 $g(Y_{ij}) = \hat f_{1j}(X)  + \hat f_{2j}(X) \times Treatment$          
 
-The $\hat f_{1j}$ and $\hat f_{2j}$ can be either piecewise polynomials, global polynomials or splines as described in section *3.3.1.1*. This 
-
+The $\hat f_{1j}$ and $\hat f_{2j}$ can be either piecewise polynomials, global polynomials or splines as described in section *3.3.1.1*. 
 
 For the $\beta_{1kpj}$ and $\beta_{2kpj}$ we can assume, either fixed (common) effect, fixed effect*s* (stratified betas), or random effects. If we choose the fixed effect approach a common beta is assumed, in the stratified approach j betas will be generated which correspond to the per trial beta, while in the random effects we assume that the per trial coefficients are driven from a common Normal distribution N($b, \sigma^2$). 
 
@@ -370,7 +369,7 @@ We will illustrate the results of the aforementioned approaches beginning with t
 
 ## GLMM-Trees
 
-In the Gevers et al . data-set we increased the level of significance into $\alpha$ =0.3 , due to small sample size per trial.
+In the Gevers et al . data-set we increased the level of significance into α =0.3 , due to small sample size per trial.
 
 ```{r lmer tree Somatostatin, eval=FALSE  }
 tree  = lmertree(dif_liver_perc~Drug |(1| Study) | Age + Gender  , alpha=0.3,
@@ -385,9 +384,7 @@ include_graphics("Figs/SomatostatinTree.png")
 
 **Figure.1 GLMM-tree for the liver data set**
 
-
 We show that there is a difference between the treatment effects of males and females. Furthermore, age seems to be an effect modifier in the subgroup of females (cut-point at 46 years).
-
 
 
 ```{r glmer tree AOM , eval=FALSE }
@@ -405,13 +402,15 @@ include_graphics("Figs/AOMTree.png")
 
 **Figure.2 GLMM-tree for the acute otitis media data set**
 
-On the Rovers et al., dataset  we show that age is a potential effect modifier and we may also have a three-way interaction with bilateral otitis.
+On the Rovers et al., dataset we show that age is a potential effect modifier and we may also have a three-way interaction with bilateral otitis.
 
 ## Regression-based approaches
 
 We will show the results for each approach, first when performing a two-stage and then when using a one-stage method. The liver disease data set contained trials with limited number of participants, see table 1. For instance, Caroli et.al had only 1 female participant in the somatostatin group. On the other hand, Keimpema et al. and Hogan et al. had limited participation of men. Therefore, the liver data set was impossible to be analysed using two-stage approaches, for the three-way interaction we observed above. We present only the acute otitis media approach.
+Before starting applying regression-based techniques to model or identify interactions, we suggest to plot the data using a locally estimated scatterplot smoothing (loess) approach, in order to have a first touch with the variables and how they are associated.
+We will show the results for each approach, first when performing a two-stage and then when using a one-stage method. The liver disease data set contained trials with limited number of participants, see table 1. For instance, Caroli et.al had only 1 female participant in the somatostatin group. On the other hand, Keimpema et al. and Hogan et al. had limited participation of men. Therefore, the liver data set was impossible to be analysed using two-stage approaches, for the three-way interaction we observed above. We present only the acute otitis media approach.
+Before starting applying regression-based techniques to model or identify interactions, we suggest to plot the data using a locally estimated scatterplot smoothing (loess) approach, in order to have a first touch with the variables and how they are associated.
 
-Before starting applying regression based techinques to model or identify interactions, we suggest to plot the data using a locally estimated scatterplot smoothing (loess) approach, in order to have a first touch with the variables and how they are associated.
 
 ```{r}
 ggplot(somatostatin, aes(y= dif_liver_perc, x = Age, color = Drug)) + 
@@ -498,7 +497,7 @@ plot_smooth(m1, view = "age", rm.ranef = F, plot_all = c("study"))
 
 ##  One-stage smoothing splines
 
-In contrast with linear regression models, in smoothing spline models we cannot interpret the shape of the regression line from the summary. Therefore, visualization is an important tool to investigate effect modification. We show that women younger than 57 have a treatment benefit, probably due to menopause.
+In contrast with linear regression models, in smoothing spline models we cannot directly interpret the shape of the regression line from the summary estimates describing the spline function. Therefore, visualization is an important tool to investigate effect modification. We show that women younger than 57 have a treatment benefit, probably due to menopause.
 
 ```{r One-Stage smoothing splines in Somatostatin }
 
@@ -1047,6 +1046,29 @@ ggplot(IPDMA, aes(x=age, y=poutcome, color= treat)) + geom_point() +
 #####
 
 # Discussion
+
+In our paper, we described and illustrated a variety of approaches to explore, confirm, model or investigate for effect modification by a continuous variable. Since clinical decision making often needs to consider treatment effect in terms of available infrastructure, costs, ethical constraints and other issues, it is important to assess how treatment effect varies across relevant patient characteristics (rather than merely establishing it does vary, as is commonly done in subgroup analysis). Policy makers can then integrate all relevant evidence (such as costs) to assess which cut-points should be recommended for decision making.
+Our results showed that it is important to account for the outcome-variable functional shape. Furthermore, we showed that GLMM-trees can be a valuable exploratory tool to detect a potential higher-level interaction. Also, two-stage methods suffered from trial drop-outs and non-convergence, when trials with few participants were analysed.
+
+## 5.1 Comparison with literature
+Help needed
+
+## 5.2 Strengths and limitations
+The major strength of our paper is the variety of approaches we illustrated. In particular, we beside generalised linear mixed effects models we also described and illustrated one and two-stage generalised additive models using splines, two-stage fractional polynomials and we proposed a one-stage fractional polynomial approach using a similar intuitive method as Royston et al. To our knowledge this the first study describing and illustrating in empirical data sets the approaches mentioned above. Furthermore, we also wish to point out some limitations.
+I am writing them in bullets so that we extend them and order them and write more:
+
+* 	GAM approach identifies the point where E( Y┴^_treated-Y┴^_control±1.96×SE_(Y_treated-Y┴^_control )) crosses 0. This measure can be further developed (ideas are welcome) for example, the percentage of the wrongly treated (Joanna’s idea), posterior confidence bands (Bayesian approach)
+*	Our data were limited in linear and quadratic shapes
+
+*	Liver data set had small trials and didn’t converge (in two-stage approach)
+*	GAMs have a lot of variations nevertheless, we used the most reasonable
+*	No simulation so we don’t really know the truth
+
+## 5.3 Implications for practice
+
+## 5.4 Conclusions
+We propose the use of one-stage generalised additive model with smoothing spline. This approach makes no assumptions over the functional shape and the cut-point where it changes, as its primary goal is to estimate them both. Furthermore, combined with the treatment effect plot we can easily identify the point where the treatment effect is altered, (equivalent to the CIs of the RD).
+
 
 
 \newpage
