@@ -126,12 +126,12 @@ We applied the approaches on two empirical examples. In the first we investigate
 
 ## Results
 
-We show that GLMM-trees is a helpful exploratory tool, providing evidence for three-way interactions. On the regression-based methods two-stage approaches showed increased risk of non-convergance and dropping whole trials due to missing data. On the other hand one-stage methods produced results using all information available. Nevertheless, they produced varying results over the power to detect the effect modification, the modeling efficiency and the produced cut-points.
+We show that GLMM-trees is a helpful exploratory tool, providing evidence for three-way interactions. On the regression-based methods two-stage approaches showed increased risk of non-convergence and dropping whole trials due to missing data. On the other hand, one-stage methods produced results using all information available. Nevertheless, they produced varying results over the power to detect the effect modification, the modelling efficiency and the produced cut-points.
 
 
 ## Conclusion
 
-We conclude that subgroup detection in IPD-MA requires knowing the underlying assumptions and careful modelling. Effect modification may be distorted by unadjusted non-linear associations. We propose the use of more flexible apporaches such GLMM-trees and splines to explore and investigate effect modification.
+We conclude that subgroup detection in IPD-MA requires knowing the underlying assumptions and careful modelling. Effect modification may be distorted by unadjusted non-linear associations. We propose the use of more flexible approaches such GLMM-trees and splines to explore and investigate effect modification.
 
 
 
@@ -602,7 +602,6 @@ kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "
 
 ```
 
-Little et al. had no information over the bilateral otitis media and Appelman et al. didn't have enough participants to investigate the FP shape. So, we dropped these studies. 
 
 ```{r MFP algorithm for AOM}
 glm = mfp(poutcome ~  fp(age) +  strata(study),
@@ -1058,9 +1057,7 @@ Help needed
 The major strength of our paper is the variety of approaches we illustrated. In particular, we beside generalised linear mixed effects models we also described and illustrated one and two-stage generalised additive models using splines, two-stage fractional polynomials and we proposed a one-stage fractional polynomial approach using a similar intuitive method as Royston et al. To our knowledge this the first study describing and illustrating in empirical data sets the approaches mentioned above. Furthermore, we also wish to point out some limitations.
 I am writing them in bullets so that we extend them and order them and write more:
 
-* 	
-
-GAM approach identifies the point where E($\hat Y_{treated} - \hat Y_{control} \pm 1.96 \times SE_{diff}$ ) crosses 0. This measure can be further developed (ideas are welcome) for example, the percentage of the wrongly treated (Joanna’s idea), posterior confidence bands (Bayesian approach)
+* GAM approach identifies the point where E($\hat Y_{treated} - \hat Y_{control} \pm 1.96 \times SE_{diff}$ ) crosses 0. This measure can be further developed (ideas are welcome) for example, the percentage of the wrongly treated (Joanna’s idea), posterior confidence bands (Bayesian approach)
 *	Our data were limited in linear and quadratic shapes
 
 *	Liver data set had small trials and didn’t converge (in two-stage approach)
