@@ -1,5 +1,5 @@
 ---
-title: "Overview and illustration of methods to investigate effect modification by a continuous covariate"
+title: "Overview of methods to investigate a treatment-continuous variable effect modification, when multiple trials are present"
 author: "Michail Belias"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
