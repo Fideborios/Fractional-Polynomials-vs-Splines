@@ -1,5 +1,5 @@
 ---
-title: "Overview of methods to investigate a treatment-continuous variable effect modification, when multiple trials are present"
+title: "Shall we move to more sophisticated methods to investigate subgroups in individual participant data meta-analysis?"
 author: "Michail Belias"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
