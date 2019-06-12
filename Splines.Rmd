@@ -1,0 +1,242 @@
+---
+title: "A new approach to investigate treatment effect modification over continuous co-variables in IPD-MA by using smoothing splines"
+author: "Michail Belias"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{bbm}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{dsfont}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+output:
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
+ indent: true  
+ pdf_document:
+  fig_caption: yes 
+  fig_height: 8
+  fig_width: 8
+ html_document:
+  df_print: paged
+csl: Style and bibliography/journal-of-clinical-epidemiology.csl
+fontsize: 14pt 
+sansfont : GFS Neohellenic
+bibliography: Style and bibliography/bibliography2.bib
+---
+
+
+```{r global_options , echo=FALSE, message=FALSE, warning= FALSE}
+.libPaths( c( .libPaths(), "C:/Users/Michael Belias/Documents/R/win-library/3.4") )
+rm(list=ls()) ### To clear namespace
+## Fractional Polynomials
+## Load data-set
+if(!require("readr")) install.packages("readr")
+## Load ggplot2 for plotting
+if(!require("ggplot2")) install.packages("ggplot2")
+## Load gridExtra for fine tuning
+if(!require("gridExtra")) install.packages("gridExtra")
+## Load knitr for fine tuning
+if(!require("knitr")) install.packages("knitr")
+## Load haven for fine tuning
+if(!require("haven")) install.packages("haven")
+## Load dplyr
+if(!require("dplyr")) install.packages("dplyr")
+## Load lme4 for lme4
+if(!require("lme4")) install.packages("lme4")
+## Load lme4 for lme4
+if(!require("pander")) install.packages("pander")
+## Load lme4 for lme4
+if(!require("kableExtra")) install.packages("kableExtra")
+## Load lme4 for lme4
+if(!require("magick")) install.packages("magick")
+## Load glmertree for glmm trees modelling
+if(!require("glmertree")) install.packages("glmertree")
+## Load GGally for better ggplot2 manipulation
+if(!require("GGally")) install.packages("GGally")
+## Load GGally for better ggplot2 manipulation
+if(!require("readxl")) install.packages("readxl")
+## Load GGally for better ggplot2 manipulation
+if(!require("kableExtra")) install.packages("kableExtra")
+## Load GGally for better ggplot2 manipulation
+if(!require("ggsci")) install.packages("ggsci")
+## Load broom for ggplot2  manipulation
+if(!require("broom")) install.packages("broom")
+## Load broom for ggplot2  manipulation
+if(!require("metafor")) install.packages("metafor")
+if(!require("effects")) install.packages("effects")
+if(!require("mgcv")) install.packages("mgcv")
+if(!require("itsadug")) install.packages("itsadug")
+if(!require("mvmeta")) install.packages("mvmeta")
+if(!require("mfp")) install.packages("mfp")
+if(!require("knitr")) install.packages("knitr")
+if(!require("aods3")) install.packages("aods3")
+if(!require("car")) install.packages("car", dependencies = T)
+if(!require("data.table")) install.packages("data.table")
+if(!require("lmerTest")) install.packages("lmerTest")
+if(!require("ggpubr")) install.packages("ggpubr")
+
+
+opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
+        echo=F, warning=FALSE, message=FALSE, fig.pos = "H", comment = "")
+options(knitr.table.format = "html")
+
+
+Sys.setenv(PATH=paste(Sys.getenv("PATH"),"C:/Program Files/MiKTeX 2.9/miktex/bin/x64/",sep=";"))
+
+```
+
+```{r loading the datasets}
+
+IPDMA <- read_sas("Data/IPDMA.sas7bdat")
+names(IPDMA) <- tolower(names(IPDMA))
+IPDMA$treat =  factor(IPDMA$treat  , labels = c("Placebo","Antibiotics") )
+IPDMA$study = factor(IPDMA$study, labels = c("Damoiseaux","Burke","Appelman","Little","Saux","McCormick"))
+IPDMA$bilat_0 =  factor(IPDMA$bilat_0  , labels = c("No","Yes") )
+
+
+
+
+somatostatin <- read_sav("Data/somatostatin.sav")
+source("Data/somatostatin_descriptives.R")
+```
+
+# Abstract Statistics in Medicine)
+
+## Background
+
+Individual participant data(IPD) meta-analysis(MA) of randomised clinical trials are considered the golden standard to investigate effect modification. Nevertheless, detecting and investigating treatment-effect modification can be lead to evidence-based personalised treatment. Treatment modified by continuous variables may be challenging to investigate when non-linear associations are present. 
+
+## Objective 
+We propose a new approach to detect treatment-effect modification, when non-linear association are present. 
+
+## Methods
+
+We apply mixed effects models with smoothing splines. 
+
+## Results
+
+
+
+## Conclusion
+
+
+
+\newpage
+
+##### 
+
+# 1. Introduction
+
+####### Randomised clinical trials (RCTs) are prospective interventional studies were patients are randomly allocated to different treatment arms. Randomisation reduces bias due to confounding and is considered [@Hariton_2018] the gold standard to investigate treatment effectiveness, but not without a cost. RCTs are cost and time-consuming and may involve experimental interventions that may have adverse effects. Hence, due to both ethical and financial reasons RCTs are designed to include the minimum number of patients needed to detect an overall treatment effect with a pre-specified power. On the other hand, the assumption that all patients have the same treatment effect known as one-treatment fits all may not be true. Therefore, in order to preserve adequate power while simultaneously investigating treatment effect differences we may need to combine multiple RCTs in a meta-analysis(MA). Meta-analyses may be conducted either using patient level or study level information and are known as individual participant data (IPD-MA) and aggregated data meta-analysis (AD-MA) respectively. AD-MA approaches commonly applied to detect effect modification are subgroup analysis and meta-regression [@Simmonds_2015]. Nevertheless, both approaches are considered prone to ecological bias [@GREENLAND_1989 ; @Palmowski_2019 ; Reade_2008 ; @Berlin_2002] and low power [@Lambert_2002 ;Riley_2010]. On the other hand, IPD-MA offers great opportunities where in AD-MA are considered impossible such as: 1) the possibility to standardise subgroup definitions and outcomes across studies, 2) increased power to investigate non-linear functional forms, 3) increased validity and reliability of the resulting subgroups and 4) flexibility to search for subgroups based on combinations of patient and/or disease characteristics [@Debray_2015 ; @Maroeska_2012; @Tierney_2015 ; Stewart_2002]. IPD-MA approaches commonly applied in order to detect effect modification are per-subgroup meta-analysis, meta-analysis of interaction terms and one-stage IPD-MA [@Simonds_2015 ; Fisher_2010].
+#######  Effect modifiers may be both categorical and/or continuous. For instance, treatment effect may differ between smokers and non-smokers, or associated with the age of the patient. In both cases IPD-MA  may be conducted in either one or two-stages. In one-stage IPD-MA, all IPD from every trial are analysed simultaneously whilst accounting for the clustering of participants within studies. Hereby, researchers may model interactions between treatment and patient-level co-variables. Recent guidance suggests centring per trial the potential effect modifier [@Hua_2016], in order to separate within and across trial information and therefore avoid potential ecological bias. In two-stage IPD-MA on the other hand each trial is first analysed separately using an appropriate statistical model. Subsequently the extracted per-trial estimates are pooled using typical meta-analytical methods. Nevertheless, the aforementioned approaches assume linearity both in the shape of outcome-effect modifier assocations and in the shape of treatment-effect modifier interaction, which may not be true. 
+
+
+
+
+
+#######  Reversely, the same notion is used to analyse data. Categorization is a common technique to investigate effect modification, by splitting the continuous covariate into subgroups. Nevertheless, these subgroups should always be created based on good prior knowledge from literature. If so, this approach can be meaningful. In all other cases, categorization has been criticised for misspecification, loss of information and power, inflation of the type I error rate and even biased results [@Royston_2005 ; @Altman_2006 ; @Austin_2004 ; @Maxwell_1993 ; @Weinberg_1995]. 
+
+#######  Another common practice is using the continuous variable as it is, and assume linearity on the linear predictor scale  . This approach may also lead to deterioration of power, misspecification, and even spurious results if the true relationship is not linear [@J_rgensen_2016]. Both categorisation and false functional form assumptions are prone to significant ecological bias. For instance, if the functional form of mortality and age is exponential and some trials have old participants while other young, both approaches can lead to biased pooled results.
+Ideally, when continuous covariates are included, we would like to account for their functional form, while simultaneously making inferences over the presence of the effect modification and avoiding ecological. Furthermore, although the association between the outcome and the continuous effect modifier is highly informative, clinical decisions are based on subgroups of participants the differ in treatment response. Finally, subgroups generated from continuous variables are defined by the cut-points were the treatment effect is considered to change. These cut-points may be based on the treatment effect function [@royston_interaction_2013], i.e. the difference between the two treatments over the range of the co-variable or the treatment-effect modifier interaction terms [@Sun_2010]. For this, various approaches to account for non-linear associations have been developed, such as splines and fractional polynomials (FP) [@Sauerbrei_2011]. 
+\par      For IPD-MA, regression-based approaches such as linear models, piecewise polynomials, FPs and smoothing splines may be performed either in one or two stages. In a two-stage approach, each trial is first modelled separately using an appropriate statistical model. Subsequently, we pool either the extracted coefficients if shared across the trials or their fitted functions, using standard meta-analytical tools. In contrast, in one-stage IPD-MA the IPD from all trials are analysed simultaneously whilst accounting for the clustering of participants within studies  . Hereto, we model interactions between treatment and patient-level variables while accounting also for the shape of the associations with the outcome. Recent recommendations suggest mean-centring the potential effect modifiers per trial in order to account for potential ecological   bias due to unadjusted confounding. In such a one-stage model, within-trial clustering can be accounted for using either a fixed effect (common intercept/slope), fixed effects (stratified intercept/slope), or random effects [@Legha_2018]. Other methods   to explore effect modification are plot- and tree-based methods such as the generalised linear mixed-effects model tree (GLMM-tree) method [@Wang_2016] or meta-stepp, a moving average (sliding window) method. 
+\par        Although there is a large variety of methods to explore effect modification for continuous covariates, little guidance exists on their use. We aim to describe and illustrate the aforementioned methods by applying them on two empirical examples, while discussing their (potential) advantages and limitations.
+
+# 2. Empirical examples
+
+\par        We use 2 IPD-sets to illustrate aforementioned methods. The first empirical example [@Rovers_2006] considers an IPD-MA where the effect of antibiotics in acute otitis media was investigated in children. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no).  They concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were investigated also separately for potential effect modification and only bilateral acute otitis media showed a significant result. 
+The second empirical example [@Gevers_2013] considers an IPD-MA to investigate the effect of Somatostatin on liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. In this example, the outcome was continuous (liver volume reduction), and age, sex, baseline liver volume, and diagnosis of either autosomal dominant polycystic liver or kidney disease were investigated for effect modification . They concluded that use of Somatostatin was more beneficial for younger (<47) female patients. One of the 3 trials had a cross-over design, therefore participants were treated both with the active and the control treatment in different time periods. In order to use these data for our illustrative purposes, we removed the cross-over design and used all patients only once, by selecting half of the patients from the active period and the other half (sex and age-matched) from the control period. Therefore, differences between our results and those reported in the original article may occur.
+
+```{r}
+b = somatostatin %>%
+    group_by(Study, Drug)%>% 
+    summarise(`Number of participants` = n(), 
+              `Age, median [range]` =  paste(median(Age,na.rm = T)  , " [" , min(Age,na.rm = T) , ",",max(Age,na.rm = T) ,"]", sep = "" ) ,
+              Female = paste(sum(Gender == "Female") , " (" , paste(round(100*mean(as.numeric(Gender == "Female"))),"%",sep = "") , ")", sep = "" ),
+              Male = paste(sum(Gender == "Male") , " (" , paste(round(100*mean(as.numeric(Gender == "Male"))),"%",sep = "") , ")", sep = "" ),
+              `Log-scaled Liver volume difference, median [range]` =  paste(round(median(dif_LnLiver,na.rm = T),3 ) , " [" , round(min(dif_LnLiver,na.rm = T),3 ) , ",",round(max(dif_LnLiver,na.rm = T),3 ) ,"]", sep = "" ))
+
+
+final=t(b[,3:7])
+colnames(final) = rep(c("Placebo","Somatostatin"),3)
+
+
+if(isTRUE(is_latex_output() || is_html_output() )){
+  kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2), bold = T  )#%>%
+  #landscape()
+}else{
+      kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2), bold = T  )#%>%
+  #landscape()
+}
+
+a = IPDMA %>%
+    group_by(study, treat)%>%
+  summarise(`Number of participants` = n(), 
+            `Age, median [range]` =  paste(round(median(age),2)  , " [" , round(min(age),2), ",",round(max(age),2) ,"]", sep = "" ) ,
+            `Males (%)` = paste(sum(gender) , " (" , paste(round(100*mean(as.numeric(gender))),"%",sep = "") , ")", sep = "" ),
+            `Bilateral AOM (%)` = paste(sum(as.numeric(bilat_0) -1), " (" , paste(round(100*mean(as.numeric(bilat_0) -1)),"%",sep = "") , ")", sep = "" ),
+            `Otorrhoea (%)` = paste(sum(oto_0) , " (" , paste(round(100*mean(as.numeric(oto_0))),"%",sep = "") , ")", sep = "" ),
+            `RAOM (%)`= paste(sum(raom) , " (" , paste(round(100*mean(as.numeric(raom))),"%",sep = "") , ")", sep = "" ), 
+            `Sibling (%)`= paste(sum(sibling) , " (" , paste(round(100*mean(as.numeric(sibling))),"%",sep = "") , ")", sep = "" ),
+            `Winter season (%)` =  paste(sum(season) , " (" , paste(round(100*mean(as.numeric(season))),"%",sep = "") , ")", sep = "" ),
+            `Being breastfed (%)`=  paste(sum(breast) , " (" , paste(round(100*mean(as.numeric(breast))),"%",sep = "") , ")", sep = "" ),
+            `Passive smoking (%)` = paste(sum(smoke) , " (" , paste(round(100*mean(as.numeric(smoke))),"%",sep = "") , ")", sep = "" ),
+            `Crying (%)` =paste(sum(cry_0) , " (" , paste(round(100*mean(as.numeric(cry_0))),"%",sep = "") , ")", sep = "" ),
+            `Runny nose (%)`=paste(sum(rnose_0) , " (" , paste(round(100*mean(as.numeric(rnose_0))),"%",sep = "") , ")", sep = "" ),
+            `Ear pain (%)` = paste(sum(pain_0) , " (" , paste(round(100*mean(as.numeric(pain_0))),"%",sep = "") , ")", sep = "" ),
+             `Fever (%)` = paste(sum(fever_0) , " (" , paste(round(100*mean(as.numeric(fever_0))),"%",sep = "") , ")", sep = "" ),
+            `Red tympanic membrane (%)` = paste(sum(tmcol_0) , " (" , paste(round(100*mean(as.numeric(tmcol_0))),"%",sep = "") , ")", sep = "" ),
+            `Bulging tympanic membrane (%)` = paste(sum(tmbul_0) , " (" , paste(round(100*mean(as.numeric(tmbul_0))),"%",sep = "") , ")", sep = "" ))
+
+
+final=t(a[,3:7])
+colnames(final) = rep(c("Placebo","Antibiotics"),6)
+#%>%
+  #kable_as_image()
+if(isTRUE(is_latex_output() || is_html_output() )){
+kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Rovers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2), bold = T )%>%
+  landscape()
+}else{
+  kable(final, format = "latex",
+      longtable = T, 
+      booktabs = T, caption = "Baseline Characteristics (Rovers et al.)" ) %>%
+  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
+  row_spec(row = 0,  bold = T) %>%
+    column_spec(column =  0,  bold = T) %>%
+  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2) , bold = T )%>%
+  landscape()
+  }
+
+```
+
+
+

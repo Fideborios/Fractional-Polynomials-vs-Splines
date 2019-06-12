@@ -1,5 +1,5 @@
 ---
-title: "Shall we move to more sophisticated methods to investigate subgroups in individual participant data meta-analysis?"
+title: "A new approach to investigate treatment effect modification over continuous co-variables in IPD-MA by using smoothing splines"
 author: "Michail Belias"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 header-includes:
@@ -22,13 +22,13 @@ header-includes:
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
 output:
- word_document:
-  reference_docx: Style and bibliography/templatePaper.docx
- indent: true  
  pdf_document:
   fig_caption: yes 
   fig_height: 8
   fig_width: 8
+ indent: true  
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
  html_document:
   df_print: paged
 csl: Style and bibliography/journal-of-clinical-epidemiology.csl
@@ -76,17 +76,17 @@ if(!require("ggsci")) install.packages("ggsci")
 if(!require("broom")) install.packages("broom")
 ## Load broom for ggplot2  manipulation
 if(!require("metafor")) install.packages("metafor")
-if(!require(effects)) install.packages("effects")
-if(!require(mgcv)) install.packages("mgcv")
-if(!require(itsadug)) install.packages("itsadug")
-if(!require(mvmeta)) install.packages("mvmeta")
-if(!require(mfp)) install.packages("mfp")
-if(!require(knitr)) install.packages("knitr")
-if(!require(aods3)) install.packages("aods3")
-if(!require(car)) install.packages("car", dependencies = T)
-if(!require(data.table)) install.packages("data.table")
-if(!require(lmerTest)) install.packages("lmerTest")
-if(!require(ggpubr)) install.packages("ggpubr")
+if(!require("effects")) install.packages("effects")
+if(!require("mgcv")) install.packages("mgcv")
+if(!require("itsadug")) install.packages("itsadug")
+if(!require("mvmeta")) install.packages("mvmeta")
+if(!require("mfp")) install.packages("mfp")
+if(!require("knitr")) install.packages("knitr")
+if(!require("aods3")) install.packages("aods3")
+if(!require("car")) install.packages("car", dependencies = T)
+if(!require("data.table")) install.packages("data.table")
+if(!require("lmerTest")) install.packages("lmerTest")
+if(!require("ggpubr")) install.packages("ggpubr")
 
 
 opts_chunk$set(fig.width=9, fig.height=6, fig.path='Figs/',
@@ -113,30 +113,25 @@ somatostatin <- read_sav("Data/somatostatin.sav")
 source("Data/somatostatin_descriptives.R")
 ```
 
-# Abstract (116 out of 200 words)
+# Abstract Statistics in Medicine)
 
 ## Background
 
-Individual participant data(IPD) meta-analysis(MA) is considered the golden standard to investigate effect modification. Often treatment is modified over continuous variables, which is a challenging task to investigate and model their association with the outcome. 
-
-
+Individual participant data(IPD) meta-analysis(MA) of randomised clinical trials are considered the golden standard to investigate effect modification. Nevertheless, detecting and investigating treatment-effect modification can be lead to evidence-based personalised treatment. Treatment modified by continuous variables may be challenging to investigate when non-linear associations are present. 
 
 ## Objective 
+We propose a new approach to detect treatment-effect modification, when non-linear association are present. 
 
-To overview recursive portioning (tree-based) and regression-based approaches that detect and model effect-modification in meta-analysis of individual participant data (IPD).   We hereto consider one-stage regression methods (linear, fractional polynomials and splines mixed effects models), two-stage regression methods (meta-analysis of linear, fractional polynomials models), meta-stepp(a sliding window approach) and GLMM-trees, a recursive portioning method that takes also into account the within trials clustering of the participants. Although, regression-based methods can be used to confirm and to explore potential effect modification, tree-based methods are suitable only for the later. 
+## Methods
 
-## Study Design and Setting
-
-We applied the approaches on two empirical data-sets. First, we investigated the three-way effect modification of somatostatin by age combined with gender on liver reduction in participants with polycystic liver disease. Second, we investigated the three-way effect modification of antibiotics by age and bilateral otitis on fever/ear-pain reduction in children with acute otitis media.
+We apply mixed effects models with smoothing splines. 
 
 ## Results
 
-We show that GLMM-trees is a helpful exploratory tool, providing for GLMM-trees, we found evidence of three-way interactions between […], […] and [...]. One-stage regression found evidence of effect modification by [… ]. Two-stage regression found evidence of effect modification by […]. Unfortunately, some two-stage approaches suffered from non-convergence, and lead to omission of entire trials due to missing data . Different results w.r.t. the presence of effect modifiers, the precision of their effects, and the decision cut-points.  
 
 
 ## Conclusion
 
-We conclude that the evaluation of subgroup effects due to effect modification in IPD-MA requires careful consideration of modelling assumptions, as effect modification may be distorted by unadjusted non-linear associations and non-convergence . We therefore propose to use flexible approaches such as GLMM-trees and one-stage regression models with splines to explore and investigate effect modification in IPD setting.
 
 
 \newpage
@@ -146,7 +141,7 @@ We conclude that the evaluation of subgroup effects due to effect modification i
 # 1. Introduction
 
 
-Individual participant data meta-analysis (IPD-MA) is a type of statistical analysis, where data are gathered from multiple studies are combined and analysed. The capability to standardise subgroup definitions and outcomes across studies, the increased power to investigate other than linear associations, the increased validity and reliability of the subgroups and the flexibility to search for subgroups based on combinations of patient and/or disease characteristics are some of the benefits of using IPD of multiple trials rather than traditional (aggregate) meta-analysis [@Debray_2015; @Maroeska_2012; @Tierney_2015]. A vivid field of research towards personalised healthcare is the investigation of effect modification. For this, IPD-MA is considered the gold standard as single trials rarely have sufficient power to properly detect effect modification. 
+Individual participant data meta-analysis (IPD-MA) is a type of statistical analysis, where data are gathered from multiple studies are combined and analysed. The possibility to standardise subgroup definitions and outcomes across studies, the increased power to investigate other than linear associations, the increased validity and reliability of the subgroups and the flexibility to search for subgroups based on combinations of patient and/or disease characteristics are some of the benefits of using IPD of multiple trials rather than traditional (aggregate) meta-analysis [@Debray_2015 ; @Maroeska_2012; @Tierney_2015]. A vivid field of research towards personalised healthcare is the investigation of effect modification. For this, IPD-MA is considered the gold standard as single trials rarely have sufficient power to properly detect effect modification. 
 Effect modification may be present in both categorical and/or continuous covariates. For instance, differences in the treatment effect may be present between smokers and non-smokers, or across the age of the patients. If subgroups have been predefined, hypothesis testing may be performed using traditional regression-based methods. For single trials, this typically involves the estimation of (linear) interaction terms between treatment and the modifier of interest. In an IPD-MA, these interaction effects may be estimated either separately within studies and subsequently be pooled across studies (two-stage IPDMA), or directly across all studies (one-stage IPDMA. 
 However, effect modification across a continuous variable is more challenging, since we may need to evaluate effect modification and at the same time want to define a threshold from which point the treatment effect is relevantly different. This way the continuous variable is categorised into subgroups, where the clinician can make decision whether to treat or not treat. 
 Reversely, the same notion is used to analyse data. Categorization is a common technique to investigate effect modification, by splitting the continuous covariate into subgroups. Nevertheless, these subgroups should always be created based on good prior knowledge from literature. If so, this approach can be meaningful. In all other cases, categorization has been criticised for misspecification, loss of information and power, inflation of the type I error rate and even biased results [@Royston_2005 ; @Altman_2006 ; @Austin_2004 ; @Maxwell_1993 ; @Weinberg_1995]. 
@@ -386,6 +381,9 @@ Before starting applying regression-based techniques to model or identify intera
 
 
 ```{r}
+IPDMA[IPDMA=="NA"] <- NA
+
+
 
 ggscatter(data = somatostatin, x = "Age",y =  "dif_liver_perc",color = "Drug",fill = "Drug",add = "loess",
           palette = "lancet",conf.int = T, conf.int.level = 0.83,
@@ -396,11 +394,11 @@ ggscatter(data = somatostatin, x = "Age",y =  "dif_liver_perc",color = "Drug",fi
   theme(plot.title = element_text(hjust = 0.5, size = 20, face = "bold"),
         plot.subtitle = element_text(hjust = 0.5, size = 16))
 
-ggscatter(data = IPDMA, x = "age",y =  "poutcome",color = "treat",
-          add = "loess",palette = "lancet", conf.int = T, legend.title = "Treatment",
+ggscatter(data = IPDMA, x = "age",y =  "poutcome",color = "treat",ggtheme = theme_minimal,
+          add = "loess",palette = "lancet", conf.int = T, legend.title = "Treatment", conf.int.level = 0.835,
           xlab = "Age of the participant",ylab = "Pr (Fever after 3/7 days)", 
           title = "Scatterplot having fever/pain after 3/7 days vs age of participant",
-          subtitle = "83.5% CIs plotted" )+ theme_minimal()+
+          subtitle = "83.5% CIs plotted" )+ 
   theme(plot.title = element_text(hjust = 0.5, size = 20,face =  "bold"),
         plot.subtitle = element_text(hjust = 0.5, size = 16))
 
@@ -582,8 +580,7 @@ column_spec(4, width = "10em")
 a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:2 )
 al =  data.frame( t(a$result$chi2), row.names = NULL)
 
-kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
-  kable_as_image()
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")
 
 
 ```
@@ -628,15 +625,13 @@ kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
 column_spec(1, bold = T, width = "10em") %>%
 column_spec(2, width = "10em")%>%
 column_spec(3, width = "6em")%>%
-column_spec(4, width = "10em")%>%
-  kable_as_image()
+column_spec(4, width = "10em")
 
 
 a= wald.test( b = betas[grep("Treatment x FP" ,rownames(betas)), 1], varb = vcov[grep("Treatment x FP" ,rownames(vcov)),grep("Treatment x FP" ,rownames(vcov))],Terms = 1:3 )
 al =  data.frame( t(a$result$chi2), row.names = NULL)
 
-kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
-  kable_as_image()
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")
 
 
 ```
@@ -727,8 +722,7 @@ column_spec(4, width = "10em")
 a= wald.test( b = betas[grep("Treatment x FP" ,rownames(betas)), 1], varb = vcov[grep("Treatment x FP" ,rownames(vcov)),grep("Treatment x FP" ,rownames(vcov))],Terms = 1:3 )
 al =  data.frame( t(a$result$chi2), row.names = NULL)
 
-kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
-  kable_as_image()
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")
 ```
 
 
@@ -774,26 +768,24 @@ kable(out, format = "latex", booktabs = T)%>%
   column_spec(1, bold = T, width = "10em") %>%
   column_spec(2, width = "10em")%>%
   column_spec(3, width = "6em")%>%
-  column_spec(4, width = "10em")%>%
-  kable_as_image()
+  column_spec(4, width = "10em")
 
 a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:2 )
 
 al =  data.frame( t(a$result$chi2), row.names = NULL)
 
-kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
-  kable_as_image()
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")
 
 ```
 
-For the liver data set the two-stage meta-analysis of interaction terms showed no statistically significant results. The reason we the same as in splines and FPs. The per trial `r kable(ymat, format = "latex", booktabs = T)%>%
+For the liver data set the two-stage meta-analysis of interaction terms showed no statistically significant results. The reason we the same as in splines and FPs. The per trial
+
+`r kable(ymat, format = "latex", booktabs = T)%>%
 kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
 column_spec(1, bold = T, width = "10em") %>%
 column_spec(2, width = "10em")%>%
 column_spec(3, width = "6em")%>%
-column_spec(4, width = "10em")%>%
-  kable_as_image()` coefficients 
-
+column_spec(4, width = "10em")` coefficients 
 Little et al had no bilateral information. The study was dropped.
 
 ```{r Gasparini approach with mvmeta  for AOM }
@@ -834,15 +826,13 @@ kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
 column_spec(1, bold = T, width = "10em") %>%
 column_spec(2, width = "10em")%>%
 column_spec(3, width = "6em")%>%
-column_spec(4, width = "10em")%>%
-  kable_as_image()
+column_spec(4, width = "10em")
 
 
 a= wald.test( b = betas[grep("Treatment x Age" ,rownames(betas)), 1], varb = vcov[grep("Treatment x Age" ,rownames(vcov)),grep("Treatment x Age" ,rownames(vcov))],Terms = 1:4 )
 al =  data.frame( t(a$result$chi2), row.names = NULL)
 
-kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")%>%
-  kable_as_image()
+kable(al, format = "latex", booktabs = T, row.names = F, digits = 3, caption = "Chi-squared test:")
 
 ```
 
@@ -856,8 +846,7 @@ lmLinear <- lmer(dif_liver_perc ~ Drug * Age*Gender + (Drug|Study) + (1|Study) ,
 
 IPDMA$bilateral = factor(IPDMA$bilat_0 , labels = c("Unilateral acute otitis","Bilateral acute otitis" ),  levels = c("No","Yes") )
 
-glmLinear <- glmer(poutcome ~ treat *age*bilateral + (treat|study) + (1|study) , 
-                   family = binomial("log"),data = IPDMA )
+glmLinear <- glmer(poutcome ~ treat *age*bilateral + (treat|study) + (1|study) , family = binomial("logit"),data = IPDMA )
 ```
 
 
@@ -877,8 +866,7 @@ kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
 column_spec(1, bold = T, width = "10em") %>%
 column_spec(2, width = "10em")%>%
 column_spec(3, width = "6em")%>%
-column_spec(4, width = "10em")%>%
-  kable_as_image()
+column_spec(4, width = "10em")
 
 out <- summary(glmLinear)$coef
 colnames(out)<- c("Estimate","Std. Error","t value","P-value")
@@ -890,8 +878,7 @@ kable_styling(latex_options = c("striped", "scale_down"),full_width = F)%>%
 column_spec(1, bold = T, width = "10em") %>%
 column_spec(2, width = "10em")%>%
 column_spec(3, width = "6em")%>%
-column_spec(4, width = "10em")%>%
-  kable_as_image()
+column_spec(4, width = "10em")
 
 
 ```
@@ -900,7 +887,7 @@ column_spec(4, width = "10em")%>%
 
 ```{r plots of one-stage IPD-MA, eval=FALSE}
 effect.boundaries =  data.frame(effect(c("Age","Drug","Gender"),lmLinear, xlevels=100))
-glm.effect.boundaries =  data.frame(effect(c("age","treat","bilateral"),glmLinear, xlevels=100))
+glm.effect.boundaries =  data.frame(effect(c("age","treat","bilateral"),glmLinear))
 
 
 ggplot() + 
