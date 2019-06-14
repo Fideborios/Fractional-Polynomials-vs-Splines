@@ -433,7 +433,7 @@ for(i in studies){
     if( i == "Damoiseaux") data$age =  jitter(data$age)
     data$Agesq =  (data$age)^2
     # RUN THE MODEL
-    model <- gam(poutcome ~ treat*bilat_0 + s(age) + s(age,by = treat) + s(age,by = bilat_0), 
+    model <- bam(poutcome ~ treat*bilat_0 + s(age) + s(age,by = treat) + s(age,by = bilat_0), 
                  data=data, discrete=TRUE, family = binomial("log"))
     
     # EXTRACT AND SAVE THE RELATED COEF AND VCOV

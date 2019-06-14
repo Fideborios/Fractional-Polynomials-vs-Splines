@@ -24,12 +24,12 @@ output:
  word_document:
   reference_docx: Style and bibliography/templatePaper.docx
  indent: true  
+ html_document:
+  df_print: paged
  pdf_document:
   fig_caption: yes 
   fig_height: 8
   fig_width: 8
- html_document:
-  df_print: paged
 csl: Style and bibliography/journal-of-clinical-epidemiology.csl
 fontsize: 14pt 
 sansfont : GFS Neohellenic
@@ -94,7 +94,7 @@ options(knitr.table.format = "html")
 
 
 Sys.setenv(PATH=paste(Sys.getenv("PATH"),"C:/Program Files/MiKTeX 2.9/miktex/bin/x64/",sep=";"))
-
+Sys.setenv(R_GSCMD = "/usr/local/bin/gs")
 ```
 
 ```{r loading the datasets}
@@ -112,18 +112,15 @@ somatostatin <- read_sav("Data/somatostatin.sav")
 source("Data/somatostatin_descriptives.R")
 ```
 
-# Abstract Statistics in Medicine)
-
 ## Background
 
-Individual participant data(IPD) meta-analysis(MA) of randomised clinical trials are considered the golden standard to investigate effect modification. Nevertheless, detecting and investigating treatment-effect modification can be lead to evidence-based personalised treatment. Treatment modified by continuous variables may be challenging to investigate when non-linear associations are present. 
+Individual participant data(IPD) meta-analysis(MA) of randomised clinical trials are considered the gold standard to investigate treatment efficiency. It is important to also investigate treatment-effect modification as the one-treatment fits all may not be true. Effect modification over a continuous co-variable may be challenging, when non-linear associations are present. Current statistical guidance involves: 1) categorising the effect modifier, 2) assuming linear or known polynomial shapes 3) or performing stepwise methods that rely on arbitrary statistical tests. 
 
 ## Objective 
-We propose a new approach to detect treatment-effect modification, when non-linear association are present. 
+We propose two new approaches to detect treatment-effect modification while modeling non-linear associations using smoothing splines. 
 
 ## Methods
-
-We apply mixed effects models with smoothing splines. 
+For the one-stage IPD-MA approach we fitted a generalised additive mixed effects model with smoothing splines and compared the results with a generalised linear mixed effects model. For the two-stage approach, we fitted a smoothing spline per trial and pooled the results using point-wise meta-analytical methods and compared the results with the same approach assuming linearity.
 
 ## Results
 
@@ -139,104 +136,100 @@ We apply mixed effects models with smoothing splines.
 
 # 1. Introduction
 
-####### Randomised clinical trials (RCTs) are prospective interventional studies were patients are randomly allocated to different treatment arms. Randomisation reduces bias due to confounding and is considered [@Hariton_2018] the gold standard to investigate treatment effectiveness, but not without a cost. RCTs are cost and time-consuming and may involve experimental interventions that may have adverse effects. Hence, due to both ethical and financial reasons RCTs are designed to include the minimum number of patients needed to detect an overall treatment effect with a pre-specified power. On the other hand, the assumption that all patients have the same treatment effect known as one-treatment fits all may not be true. Therefore, in order to preserve adequate power while simultaneously investigating treatment effect differences we may need to combine multiple RCTs in a meta-analysis(MA). Meta-analyses may be conducted either using patient level or study level information and are known as individual participant data (IPD-MA) and aggregated data meta-analysis (AD-MA) respectively. AD-MA approaches commonly applied to detect effect modification are subgroup analysis and meta-regression [@Simmonds_2015]. Nevertheless, both approaches are considered prone to ecological bias [@GREENLAND_1989 ; @Palmowski_2019 ; Reade_2008 ; @Berlin_2002] and low power [@Lambert_2002 ;Riley_2010]. On the other hand, IPD-MA offers great opportunities where in AD-MA are considered impossible such as: 1) the possibility to standardise subgroup definitions and outcomes across studies, 2) increased power to investigate non-linear functional forms, 3) increased validity and reliability of the resulting subgroups and 4) flexibility to search for subgroups based on combinations of patient and/or disease characteristics [@Debray_2015 ; @Maroeska_2012; @Tierney_2015 ; Stewart_2002]. IPD-MA approaches commonly applied in order to detect effect modification are per-subgroup meta-analysis, meta-analysis of interaction terms and one-stage IPD-MA [@Simonds_2015 ; Fisher_2010].
-#######  Effect modifiers may be both categorical and/or continuous. For instance, treatment effect may differ between smokers and non-smokers, or associated with the age of the patient. In both cases IPD-MA  may be conducted in either one or two-stages. In one-stage IPD-MA, all IPD from every trial are analysed simultaneously whilst accounting for the clustering of participants within studies. Hereby, researchers may model interactions between treatment and patient-level co-variables. Recent guidance suggests centring per trial the potential effect modifier [@Hua_2016], in order to separate within and across trial information and therefore avoid potential ecological bias. In two-stage IPD-MA on the other hand each trial is first analysed separately using an appropriate statistical model. Subsequently the extracted per-trial estimates are pooled using typical meta-analytical methods. Nevertheless, the aforementioned approaches assume linearity both in the shape of outcome-effect modifier assocations and in the shape of treatment-effect modifier interaction, which may not be true. 
+####### Randomised clinical trials (RCTs) are prospective interventional studies were patients are randomly allocated to different treatment arms. Randomisation reduces bias due to confounding and is considered [@Hariton_2018] the gold standard to investigate treatment effectiveness but not without a cost. RCTs are cost and time-consuming and may involve experimental interventions that may have adverse effects. Hence, due to both ethical and financial reasons RCTs are designed to include the minimum number of patients needed to detect an overall treatment effect with a pre-specified power. On the other hand, the assumption that all patients have the same response to treatment also known as one-treatment fits all may not be true. Therefore, in order to preserve adequate power while simultaneously investigating treatment effect differences we may need to combine multiple RCTs in a meta-analysis(MA). Meta-analyses may be conducted either using patient level or study level information and are known as individual participant data meta-analysis (IPD-MA) and aggregated data meta-analysis (AD-MA) respectively. Subgroup analysis and meta-regression are commonly applied AD-MA approaches, to detect effect modification [@Simmonds_2015]. Nevertheless, both approaches are considered prone to ecological bias [@GREENLAND_1989 ; @Palmowski_2019 ; @Reade_2008 ; @Berlin_2002] and low power [@Lambert_2002 ; @Riley_2010]. On the other hand, IPD-MA offers opportunities that in AD-MA are considered impossible such as: 1) the possibility to standardise subgroup definitions and outcomes across studies, 2) increased power to model non-linear functional forms, 3) increased validity and reliability of the resulting subgroups and 4) flexibility to search for subgroups based on combinations of patient and/or disease characteristics [@Debray_2015 ; @Maroeska_2012; @Tierney_2015]. Therefore, whenever IPD is available it is suggested to perform an IPD-MA rather than AD-MA [@Lambert_2002 ; @Fisher_2011 ; @Simmonds_2007 ; @Stewart_2002].
+
+#######  IPD-MA may be conducted in either one or two stages. In one-stage IPD-MA, all IPD from every trial are analysed simultaneously, whilst accounting for the clustering of participants within studies. Hereby, researchers may model interactions between treatment and patient-level co-variables. Recent guidance suggests centring per trial the potential effect modifier [@Hua_2016], in order to separate within and across trial information and therefore avoid potential ecological bias. In two-stage IPD-MA on the other hand each trial is first analysed separately using an appropriate statistical model. For instance, the first stage may estimate different effects observed per subgroup, or the treatment-covariate interaction effect. Subsequently these effects are pooled using typical meta-analytical methods. 
+
+#######  Nevertheless, inferences driven from a single interaction term or from treatment effect differences between subgroups are unbiased when the co-variable domain is similar across studies and/or the effects are linear [@Simmonds_2007]. This assumption may not true and effect modification may have to be modelled using a non-linear function. Royston and Sauerbrei [@Royston_2004] proposed a strategy to model treatment effects over a continuous co-variable by fitting fractional polynomials (FPs) in single studies. In a subsequent article they extended their approach to IPD-MA using a two-stage approach. In the fist stage, a fractional polynomial is selected using one of the following three methods : 1) the best fitting overall fractional polynomial, 2) the best fitting -per trial- second degree FPs 3) the best fitting -per trial- FPs (any combination of linear, FP1 or FP2). Then treatment effect function per trial is estimated. As a second step the per trial treatment effect functions are pooled using a pointwise meta-analysis. Nevertheless, the assumption that the outcome-effect modifier association has the same shape in both treatment arms may not be true. Furthermore, fractional polynomial rely on tests with arbitrary $\alpha$ significance level. Finally, FPs are global polynomial functions and may not fit well on the boundaries of the continuous effect modifier. 
+
+####### We propose the use of generalised additive mixed effect models with smoothing splines to model the outcome-effect modifier. Since effect modification may not be constant and therefore detected by a single term, we propose the use of treatment effect function and the corresponding treatment effect plot. We present two extreme cases applied in simulated data and 2 empirical examples   
+
+
+# 2. Example data-sets
+## 2.1 Empirical data-sets
+
+\par        We use 2 IPD-sets to illustrate aforementioned methods. The first IPD-MA investigates the effect of antibiotics in children with acute otitis media [@Rovers_2006]. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no). They concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were investigated also separately for potential effect modification and only bilateral acute otitis media showed a significant result. The second [@Gevers_2013] considers an IPD-MA to investigate the effect of Somatostatin on liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. In this example, the outcome was continuous (liver volume reduction), and age, sex, baseline liver volume, and diagnosis of either autosomal dominant polycystic liver or kidney disease were investigated for effect modification . They concluded that use of Somatostatin was more beneficial for younger (<47) female patients. One of the 3 trials had a cross-over design, therefore participants were treated both with the active and the control treatment in different time periods. In order to use these data for our illustrative purposes, we removed the cross-over design and used all patients only once, by selecting half of the patients from the active period and the other half (sex and age-matched) from the control period. Therefore, differences between our results and those reported in the original article may occur.
+
+## 2.2 Simulated data-sets
+
+We simulated 2 data-sets which we consider extreme cases. The first data-set has 
+
+
+# 3. Methods
+
+In our study we a the use of generalised mixed effects models with smoothing splines to investigate the effect modification of a treatment across a continuous variable. We will also fit the equivalent generalised linear mixed effects model and compare their results. 
+
+ 
+## 2.1 Statistical approaches
+
+## Generalised additive mixed models
+
+In generalised additive mixed models we 
 
 
 
+# Results
 
 
-#######  Reversely, the same notion is used to analyse data. Categorization is a common technique to investigate effect modification, by splitting the continuous covariate into subgroups. Nevertheless, these subgroups should always be created based on good prior knowledge from literature. If so, this approach can be meaningful. In all other cases, categorization has been criticised for misspecification, loss of information and power, inflation of the type I error rate and even biased results [@Royston_2005 ; @Altman_2006 ; @Austin_2004 ; @Maxwell_1993 ; @Weinberg_1995]. 
 
-#######  Another common practice is using the continuous variable as it is, and assume linearity on the linear predictor scale  . This approach may also lead to deterioration of power, misspecification, and even spurious results if the true relationship is not linear [@J_rgensen_2016]. Both categorisation and false functional form assumptions are prone to significant ecological bias. For instance, if the functional form of mortality and age is exponential and some trials have old participants while other young, both approaches can lead to biased pooled results.
-Ideally, when continuous covariates are included, we would like to account for their functional form, while simultaneously making inferences over the presence of the effect modification and avoiding ecological. Furthermore, although the association between the outcome and the continuous effect modifier is highly informative, clinical decisions are based on subgroups of participants the differ in treatment response. Finally, subgroups generated from continuous variables are defined by the cut-points were the treatment effect is considered to change. These cut-points may be based on the treatment effect function [@royston_interaction_2013], i.e. the difference between the two treatments over the range of the co-variable or the treatment-effect modifier interaction terms [@Sun_2010]. For this, various approaches to account for non-linear associations have been developed, such as splines and fractional polynomials (FP) [@Sauerbrei_2011]. 
-\par      For IPD-MA, regression-based approaches such as linear models, piecewise polynomials, FPs and smoothing splines may be performed either in one or two stages. In a two-stage approach, each trial is first modelled separately using an appropriate statistical model. Subsequently, we pool either the extracted coefficients if shared across the trials or their fitted functions, using standard meta-analytical tools. In contrast, in one-stage IPD-MA the IPD from all trials are analysed simultaneously whilst accounting for the clustering of participants within studies  . Hereto, we model interactions between treatment and patient-level variables while accounting also for the shape of the associations with the outcome. Recent recommendations suggest mean-centring the potential effect modifiers per trial in order to account for potential ecological   bias due to unadjusted confounding. In such a one-stage model, within-trial clustering can be accounted for using either a fixed effect (common intercept/slope), fixed effects (stratified intercept/slope), or random effects [@Legha_2018]. Other methods   to explore effect modification are plot- and tree-based methods such as the generalised linear mixed-effects model tree (GLMM-tree) method [@Wang_2016] or meta-stepp, a moving average (sliding window) method. 
-\par        Although there is a large variety of methods to explore effect modification for continuous covariates, little guidance exists on their use. We aim to describe and illustrate the aforementioned methods by applying them on two empirical examples, while discussing their (potential) advantages and limitations.
+```{r One-Stage smoothing splines in Somatostatin }
 
-# 2. Empirical examples
-
-\par        We use 2 IPD-sets to illustrate aforementioned methods. The first empirical example [@Rovers_2006] considers an IPD-MA where the effect of antibiotics in acute otitis media was investigated in children. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no).  They concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were investigated also separately for potential effect modification and only bilateral acute otitis media showed a significant result. 
-The second empirical example [@Gevers_2013] considers an IPD-MA to investigate the effect of Somatostatin on liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. In this example, the outcome was continuous (liver volume reduction), and age, sex, baseline liver volume, and diagnosis of either autosomal dominant polycystic liver or kidney disease were investigated for effect modification . They concluded that use of Somatostatin was more beneficial for younger (<47) female patients. One of the 3 trials had a cross-over design, therefore participants were treated both with the active and the control treatment in different time periods. In order to use these data for our illustrative purposes, we removed the cross-over design and used all patients only once, by selecting half of the patients from the active period and the other half (sex and age-matched) from the control period. Therefore, differences between our results and those reported in the original article may occur.
-
-```{r}
-b = somatostatin %>%
-    group_by(Study, Drug)%>% 
-    summarise(`Number of participants` = n(), 
-              `Age, median [range]` =  paste(median(Age,na.rm = T)  , " [" , min(Age,na.rm = T) , ",",max(Age,na.rm = T) ,"]", sep = "" ) ,
-              Female = paste(sum(Gender == "Female") , " (" , paste(round(100*mean(as.numeric(Gender == "Female"))),"%",sep = "") , ")", sep = "" ),
-              Male = paste(sum(Gender == "Male") , " (" , paste(round(100*mean(as.numeric(Gender == "Male"))),"%",sep = "") , ")", sep = "" ),
-              `Log-scaled Liver volume difference, median [range]` =  paste(round(median(dif_LnLiver,na.rm = T),3 ) , " [" , round(min(dif_LnLiver,na.rm = T),3 ) , ",",round(max(dif_LnLiver,na.rm = T),3 ) ,"]", sep = "" ))
+# Note: this is really not the best fitting model for the data:
+m1 <- bam(dif_liver_perc ~ Drug*Gender*Age + 
+            s(Study,Age,bs = "re") + 
+            s(Study,Gender,bs = "re") + 
+            s(Study,Drug,bs="re") , data = somatostatin,method="REML" ,  discrete=TRUE)
 
 
-final=t(b[,3:7])
-colnames(final) = rep(c("Placebo","Somatostatin"),3)
+par(mfrow=c(2,1), cex=0.75)
+plot_diff(m1, view='Age',cond = list(Gender="Male") , comp=list(Drug=c("placebo", "somatostatin")), 
+    rm.ranef=TRUE, col = "darkblue",print.summary = F, main = "Men", 
+    xlab = "Age (in years)",
+    ylab = "Estimated treatment difference")
 
-
-if(isTRUE(is_latex_output() || is_html_output() )){
-  kable(final, format = "latex",
-      longtable = T, 
-      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
-  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
-  row_spec(row = 0,  bold = T) %>%
-    column_spec(column =  0,  bold = T) %>%
-  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2), bold = T  )#%>%
-  #landscape()
-}else{
-      kable(final, format = "latex",
-      longtable = T, 
-      booktabs = T, caption = "Baseline Characteristics (Gevers et al.)" ) %>%
-  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
-  row_spec(row = 0,  bold = T) %>%
-    column_spec(column =  0,  bold = T) %>%
-  add_header_above(c(" " = 1, "van Keimpema et al" = 2, "Hogan et al" = 2, "Caroli et al" = 2), bold = T  )#%>%
-  #landscape()
-}
-
-a = IPDMA %>%
-    group_by(study, treat)%>%
-  summarise(`Number of participants` = n(), 
-            `Age, median [range]` =  paste(round(median(age),2)  , " [" , round(min(age),2), ",",round(max(age),2) ,"]", sep = "" ) ,
-            `Males (%)` = paste(sum(gender) , " (" , paste(round(100*mean(as.numeric(gender))),"%",sep = "") , ")", sep = "" ),
-            `Bilateral AOM (%)` = paste(sum(as.numeric(bilat_0) -1), " (" , paste(round(100*mean(as.numeric(bilat_0) -1)),"%",sep = "") , ")", sep = "" ),
-            `Otorrhoea (%)` = paste(sum(oto_0) , " (" , paste(round(100*mean(as.numeric(oto_0))),"%",sep = "") , ")", sep = "" ),
-            `RAOM (%)`= paste(sum(raom) , " (" , paste(round(100*mean(as.numeric(raom))),"%",sep = "") , ")", sep = "" ), 
-            `Sibling (%)`= paste(sum(sibling) , " (" , paste(round(100*mean(as.numeric(sibling))),"%",sep = "") , ")", sep = "" ),
-            `Winter season (%)` =  paste(sum(season) , " (" , paste(round(100*mean(as.numeric(season))),"%",sep = "") , ")", sep = "" ),
-            `Being breastfed (%)`=  paste(sum(breast) , " (" , paste(round(100*mean(as.numeric(breast))),"%",sep = "") , ")", sep = "" ),
-            `Passive smoking (%)` = paste(sum(smoke) , " (" , paste(round(100*mean(as.numeric(smoke))),"%",sep = "") , ")", sep = "" ),
-            `Crying (%)` =paste(sum(cry_0) , " (" , paste(round(100*mean(as.numeric(cry_0))),"%",sep = "") , ")", sep = "" ),
-            `Runny nose (%)`=paste(sum(rnose_0) , " (" , paste(round(100*mean(as.numeric(rnose_0))),"%",sep = "") , ")", sep = "" ),
-            `Ear pain (%)` = paste(sum(pain_0) , " (" , paste(round(100*mean(as.numeric(pain_0))),"%",sep = "") , ")", sep = "" ),
-             `Fever (%)` = paste(sum(fever_0) , " (" , paste(round(100*mean(as.numeric(fever_0))),"%",sep = "") , ")", sep = "" ),
-            `Red tympanic membrane (%)` = paste(sum(tmcol_0) , " (" , paste(round(100*mean(as.numeric(tmcol_0))),"%",sep = "") , ")", sep = "" ),
-            `Bulging tympanic membrane (%)` = paste(sum(tmbul_0) , " (" , paste(round(100*mean(as.numeric(tmbul_0))),"%",sep = "") , ")", sep = "" ))
-
-
-final=t(a[,3:7])
-colnames(final) = rep(c("Placebo","Antibiotics"),6)
-#%>%
-  #kable_as_image()
-if(isTRUE(is_latex_output() || is_html_output() )){
-kable(final, format = "latex",
-      longtable = T, 
-      booktabs = T, caption = "Baseline Characteristics (Rovers et al.)" ) %>%
-  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
-  row_spec(row = 0,  bold = T) %>%
-    column_spec(column =  0,  bold = T) %>%
-  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2), bold = T )%>%
-  landscape()
-}else{
-  kable(final, format = "latex",
-      longtable = T, 
-      booktabs = T, caption = "Baseline Characteristics (Rovers et al.)" ) %>%
-  kable_styling(latex_options = c("striped"),font_size =8, full_width = T, position = "center") %>%
-  row_spec(row = 0,  bold = T) %>%
-    column_spec(column =  0,  bold = T) %>%
-  add_header_above(c(" " = 1, "Damoiseaux" = 2, "Burke" = 2, "Appelman" = 2, "Little" = 2, "Saux" = 2, "McCormick" = 2) , bold = T )%>%
-  landscape()
-  }
+plot_diff(m1, view='Age',cond = list(Gender="Female") , comp=list(Drug=c("placebo", "somatostatin")), 
+    rm.ranef=TRUE, col = "darkgreen",print.summary = F, main = "Women",
+    xlab = "Age (in years)",
+    ylab = "Estimated treatment difference ")
 
 ```
 
 
 
+```{r}
+par(mfrow=c(1,2), cex=1.1)
+# version 1:
+plot_smooth(m1, view="Age", plot_all="Drug", rm.ranef=TRUE, se = 2.56)
+
+```
+
+```{r One-Stage smoothing splines in AOM study }
+
+# Note: this is really not the best fitting model for the data:
+m1 <- bam(poutcome ~bilat_0*treat*age + s(age) + 
+            s(study,age,bs = "re") + 
+            s(study,bilat_0,bs = "re") + 
+            s(study,treat,bs="re") , family = binomial("identity"), data = IPDMA, method="REML" ,  discrete=TRUE)
+
+par(mfrow=c(2,1), cex=0.75)
+plot_smooth(m1, view="age", plot_all="treat", cond = list(bilat_0="No") ,  rm.ranef=TRUE, se = 1.96)
+plot_diff(m1, view='age',cond = list(bilat_0="No") , 
+          comp=list(treat=c("Placebo", "Antibiotics")), 
+          rm.ranef=TRUE, col = "darkblue",print.summary = F, main = "Children with unilateral otitis media", 
+          xlab = "Age (in years)", ylab = "Estimated difference (log-scale)")
+
+
+
+```
+
+
+
+```{r}
+par(mfrow=c(2,1), cex=0.75)
+plot_smooth(m1, view="age", plot_all="treat", cond = list(bilat_0="Yes") ,  
+            rm.ranef=TRUE, sim.ci=TRUE, se = 0.8, transform = "exp")
+plot_diff(m1, view='age',cond = list(bilat_0="Yes") , comp=list(treat=c("Placebo", "Antibiotics")), 
+    rm.ranef=TRUE, col = "darkgreen",print.summary = F, main = "Children with bilateral otitis media",
+    xlab = "Age (in years)", mark.diff = T,col.diff =  "purple",sim.ci=TRUE, 
+    ylab = "Estimated difference (log-scale)")
+```
