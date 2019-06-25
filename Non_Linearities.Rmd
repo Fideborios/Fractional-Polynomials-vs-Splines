@@ -1,0 +1,411 @@
+---
+title: "A new approach to investigate treatment effect modification over continuous co-variables in IPD-MA by using smoothing splines"
+author: "Michail Belias"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{bbm}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{dsfont}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+output:
+ pdf_document:
+    fig_caption: yes
+    fig_crop: no
+    fig_height: 8
+    fig_width: 6
+    highlight: haddock
+ html_document:
+  df_print: paged
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
+ indent: true  
+csl: Style and bibliography/journal-of-clinical-epidemiology.csl
+fontsize: 14pt 
+sansfont : GFS Neohellenic
+bibliography: Style and bibliography/bibliography2.bib
+---
+
+
+```{r global_options , echo=FALSE, message=FALSE, warning= FALSE}
+rm(list=ls()) ### To clear namespace
+
+# Libraries for loading and saving data
+## Load data-set for loading xlsx data-sets
+if(!require("readr")) install.packages("readr")
+## Load readxl for loading xlsx data-sets
+if(!require("readxl")) install.packages("readxl")
+## Load haven for loading sas data-sets 
+if(!require("haven")) install.packages("haven")
+
+################################################
+# Libraries for plotting
+## Load ggpubr for plotting
+if(!require("ggpubr")) install.packages("ggpubr") # automatically loads the ggplot2
+## Load gridExtra  to arrange multiple grid-based plots on a page, and draw tables
+if(!require("gridExtra")) install.packages("gridExtra")
+## Load ggsci for better looking colors
+if(!require("ggsci")) install.packages("ggsci")
+## Load sjPlot to get easy statistical summaries and plots
+if(!require("sjPlot")) install.packages("sjPlot")
+## Load itsadug to have nice plots of GAMMs
+if(!require("itsadug")) install.packages("itsadug")
+## Load magick for graphics and image processing in R
+if(!require("magick")) install.packages("magick")
+## Load webshot for tranforming HTML objects into pictures
+if(!require("webshot")) install.packages("webshot")
+## Load lme4 for lme4
+if(!require("pander")) install.packages("pander")
+## Load kableExtra for better looking kable objects
+if(!require("kableExtra")) install.packages("kableExtra") # automatically loads kable
+
+################################################
+# Libraries for data manipulation
+## Load knitr for fine tuning
+if(!require("knitr")) install.packages("knitr")
+## Load dplyr for data manipulation
+if(!require("dplyr")) install.packages("dplyr")
+
+################################################
+# Libraries for the statistical analysis 
+## Load lme4 for lme4
+if(!require("lme4")) install.packages("lme4")
+## Load mfp to fit multi-variable fractional polynomials
+if(!require("mfp")) install.packages("mfp")
+## Load lmerTest to add information into the summaries  
+if(!require("lmerTest")) install.packages("lmerTest")
+## Load mcgv to fit gamms and bamm
+if(!require("mgcv")) install.packages("mgcv")
+################################################
+
+
+
+## General output of the chunks 
+opts_chunk$set(fig.path='Figs/',                # The path where to save the figures
+               echo=F,                          # Logical whether the chunck will be printed 
+               warning=FALSE,                   # Logical whether the warnings will be printed
+               message=FALSE,                   # Logical whether the messages will be printed
+               fig.pos = " ",                   # The position of the 
+               comment = ""                     #
+               )
+
+options(knitr.table.format = "html")
+
+
+Sys.setenv(PATH=paste(Sys.getenv("PATH"),"C:/Program Files/MiKTeX 2.9/miktex/bin/x64/",sep=";"))
+Sys.setenv(R_GSCMD = "/usr/local/bin/gs")
+```
+
+
+```{r loading the datasets}
+IPDMA <- read_sas("Data/IPDMA.sas7bdat")
+names(IPDMA) <- tolower(names(IPDMA))
+IPDMA$treat =  factor(IPDMA$treat  , labels = c("Placebo","Antibiotics") )
+IPDMA$study = factor(IPDMA$study, labels = c("Damoiseaux","Burke","Appelman","Little","Saux","McCormick"))
+IPDMA$bilat_0 =  factor(IPDMA$bilat_0  , labels = c("No","Yes") )
+Tubano <- read_csv("Data/VolledigeDS.csv")
+somatostatin <- read_sav("Data/somatostatin.sav")
+source("Data/somatostatin_descriptives.R")
+
+```
+
+\newpage
+
+## Background
+
+Individual participant data(IPD) meta-analysis(MA) of randomised clinical trials are considered the gold standard to investigate treatment efficiency. It is important to also investigate treatment-effect modification as the one-treatment fits all may not be true. Effect modification over a continuous co-variable may be challenging, when non-linear associations are present.
+
+## Objective 
+We propose a new approach to model and investigate treatment-effect modification, while modelling non-linear associations using smoothing splines. 
+
+## Methods
+We compared generalised additive mixed effects model with smoothing splines(GAMMs), generalised linear mixed effects model, and two-stage fractional polynomial approach in a simulated data-set. Then we applied GAMMs in two empirical IPD-sets to illustrate the importance of treatment effect functions and their corresponding plots in treatment decision making.
+
+## Results
+
+
+
+## Conclusion
+
+
+
+\newpage
+
+##### 
+
+# 1. Introduction
+
+####### Randomised clinical trials (RCTs) are prospective interventional studies were patients are randomly allocated to treatment arms. Randomisation reduces bias due to confounding and is considered [@Hariton_2018] the gold standard to investigate treatment effectiveness but not without a cost. RCTs are cost and time-consuming endeavours and involve experimental interventions that may have adverse effects. Hence, due to both ethical and financial reasons RCTs are designed to include the minimum number of patients needed to detect an overall treatment effect with a pre-specified power. On the other hand, the assumption that all patients have the same response to treatment also known as *one treatment fits all* may not be true. In order to associate treatment effect differences with patient level characteristics, while also preserving sufficient power we may need to combine multiple RCTs in a meta-analysis(MA). Meta-analyses may be conducted either using patient level or study level information and are known as individual participant data meta-analysis (IPD-MA) and aggregated data meta-analysis (AD-MA) respectively. Subgroup analysis and meta-regression are AD-MA approaches commonly applied to detect effect modification [@Simmonds_2015]. Nevertheless, both approaches are considered prone to ecological bias [@GREENLAND_1989 ; @Palmowski_2019 ; @Reade_2008 ; @Berlin_2002] and low power [@Lambert_2002 ; @Riley_2010]. On the other hand, IPD-MA offers opportunities that in AD-MA are considered impossible such as: 1) the possibility to standardise subgroup definitions and outcomes across studies, 2) increased power to model non-linear functional forms, 3) increased validity and reliability of the resulting subgroups and 4) flexibility to search for subgroups based on combinations of patient and/or disease characteristics [@Debray_2015 ; @Maroeska_2012; @Tierney_2015]. Therefore, it is proposed [@Lambert_2002 ; @Fisher_2011 ; @Simmonds_2007 ; @Stewart_2002], whenever IPD is available to perform an IPD-MA rather than AD-MA.
+
+#######  IPD-MA may be conducted in either one or two stages. In one-stage IPD-MA, all IPD from every trial are analysed simultaneously, whilst accounting for the clustering of participants within studies. Hereby, researchers may model interactions between treatment and patient-level co-variables. Recent guidance suggests centring per trial the potential effect modifier [@Hua_2016], in order to separate within and across trial information and therefore avoid potential ecological bias. In two-stage IPD-MA on the other hand each trial is first analysed separately using an appropriate statistical model. For instance, the first stage may estimate different effects observed per subgroup, or the treatment effect modifier interaction effect. Subsequently these effects are pooled using typical meta-analytical methods. 
+
+#######  Nevertheless, inferences driven from a single interaction term or from treatment effect differences between subgroups are unbiased if the co-variable domain is similar across studies and/or the effects are linear [@Simmonds_2007]. This assumption may not true and effect modification may have to be modelled using a non-linear function. Royston and Altman [@Royston_1994] introduced fractional polynomials in order to model non-linear associations. Fractional polynomials receive their degrees from a fixed set $S$= {-2, -1, -0.5, ln, 0.5, 1, 2, 3}. Subsequently, Royston and Sauerbrei [@Royston_2004] extended their strategy to model treatment effects over a continuous co-variable involving interaction. Nevertheless, both approaches were limited to single studies. In a subsequent article they extended their proposal to IPD-MA using a two-stage approach [@Sauerbrei_2011]. In the fist stage, a fractional polynomial is selected using one of the following three methods : 1) the best fitting overall FP, 2) the best fitting -per trial- second degree FP2 3) the best fitting -per trial- FP which can be any combination of linear, FP1 or FP2. Then a treatment effect function per trial is estimated and as a second step pooled using point-wise meta-analysis. Nevertheless, the assumption that the outcome-effect modifier association has the same shape in both treatment arms may not be true. Furthermore, fractional polynomials rely on tests and the choice of  $\alpha$ significance levels may be arbitrary. Finally, FPs are global polynomial functions and may not fit well on the boundaries of the continuous effect modifier and may be prone to power loss when the per trial mean of the continuous effect modifier is highly heterogeneous [@Simmonds_2007]. 
+
+####### We propose the use of generalised additive mixed effect models with smoothing splines to model the outcome-effect modifier. Since effect modification may not be constant and therefore not possible to be detected by a single term, we propose the use of treatment effect function and the corresponding treatment effect plot. We present two extreme cases applied in simulated data and 2 empirical examples   
+
+
+##### 
+\newpage 
+
+
+# 2. Methods
+
+In our study we advocate the use of generalised additive mixed effects models (GAMMs) with smoothing splines to model and detect treatment effect modification by a continuous variable. For that, we will show results from one simulated extreme scenario and 2 real life empirical examples.
+
+## 2.1 Data-set
+## 2.1.1 Simulated data-set
+
+We simulated 1 IPD-set which we considered an extreme case with 5 RCTs with 100 participants each, including 4 variables: 1) a binary variable **T** which corresponds to treatment 2) a uniformly distributed co-variable **Age** ranging from 30 to 60 years old and 3) a variable to indicate trial membership 4) a continuous outcome **Y**. We assumed equal treatment allocation for all trials, but different age groups randomised per trial, see table 1. **Age** was linearly associated with **Y** in the control group and quadratically in the treated group. 
+
+```{r fig.cap="Table 1." , out.width= "25%"}
+
+a= as.data.frame(matrix(c(paste("trial", 1:5), c("30-40","35-45","40-50","45-55","50-60")), ncol=2, nrow=5))
+a= tab_df(a, title = "Age ranges per trial", col.header =  c("Trial","Age range of the participants", file = "Figs/Table1.html"),  
+    CSS = list(
+    css.caption = 'font-weight: bold; text-align: center; font-size: 28;',
+    css.centeralign = 'text-align: center; font-size: 22;', 
+    css.firsttablecol = 'font-weight: bold;font-size: 22;', 
+    css.firsttablerow = 'font-weight: bold;font-size: 22;'
+  ))
+
+#webshot("Figs/Table1.html", "Figs/Table1.png")
+include_graphics("Figs/Table1.png")
+
+```
+
+We considered the following example. Patients with liver disease are randomly allocated to *placebo* and *drug*. After a period of time the difference in liver volume is meassured. We assumed that patients that received *placebo* had an 2.5%  decrease in all age categories. The treatment had no-effect on young patients (around 30), and as Age increased the treatment effect increased with a quadratic shape we assumed t. 
+
+The linear predictor for the whole IPD-set was: 
+$Y_{i} =  \beta_{0} + \beta_{Age} \times \frac{Age_{i} - 30}{60} + \beta_{Treat} \times Treatment_{i} + \beta_x \times (\frac{Age_{i} - 30}{60})^2 \times Treatment_{i} + \epsilon_{i}$
+
+Notice that we don't vary the $\beta$s per trial. 
+$\beta_{0}$ = -2.5, $\beta_{Treat}$ = 0 , $\beta_{Age}$ = 0, $\beta_{X}$ = 20
+
+```{r }
+
+IPD1=  data.frame(Trial = factor(rep(1:5, each = 100), levels = c(1:5), labels = paste("Trial",1:5)),
+                  Age = c(runif(100, 30,40),runif(100, 35,45),runif(100, 40,50),runif(100, 45,55),runif(100, 50,60)),
+                  Treatment = rbinom(1000, 1, 0.5))
+
+IPD1$Age.d  =  round(((IPD1$Age - 30)/60),3)
+IPD1$Y =  with(IPD1, -2.5 +0*Treatment+ 0* Age.d  - 20*I(Treatment*Age.d^2)  + rnorm(1000,0,1))
+IPD1$Treat =  IPD1$Treatment                                                                 
+IPD1$Treatment =factor(IPD1$Treatment, levels = c(0,1), labels = c("Control", "Drug"))
+
+a= ggplot(IPD1)+ 
+  geom_point( aes(x= Age, y = Y, color = Trial, shape = Treatment))+ 
+  geom_smooth(data = IPD1, mapping = aes(x= Age, y = Y, fill = Treatment),method = "loess", span=1.25, se = F, color= "black")+ 
+  labs(title = "Liver difference after 2 weeks")+ 
+  ylab("Liver volume difference (percentage %)") +
+  scale_shape_manual(values = c(1, 16))+ 
+  scale_color_jama()+ 
+  theme_bw() +
+  theme(plot.title = element_text( hjust=0.5), 
+        plot.margin = margin(2,.8,2,.8, "cm")) 
+        
+# ggsave(filename = "Figs/plot.png")
+include_graphics("Figs/plot.png")
+```
+
+
+## 2.1.2 Empirical data-sets
+
+#######  We use 2 IPD-sets to illustrate the aforementioned method. The first IPD-MA investigates the effect of antibiotics in children with acute otitis media [@Rovers_2006]. Rovers et al. collected IPD from 6 randomised clinical trials with a total of 1643 children, aged from 0-12 years old. The primary outcome was fever and/or ear-pain after 3-7 days (yes/no). They concluded that antibiotics were more beneficial in younger children (less than 2 years old) with bilateral acute otitis media. Bilateral acute otitis media (yes/no), age, otorrhea were investigated also separately for potential effect modification and only bilateral acute otitis media showed a significant result. The second IPD-set [@Gevers_2013] considers an IPD-MA to investigate the effect of somatostatin on liver volume reduction. Gevers et al. collected IPD from 3 randomised placebo-controlled trials with a total of 107 participants. In this example, the outcome was continuous (liver volume reduction), and age, sex, baseline liver volume, and diagnosis of either autosomal dominant polycystic liver or kidney disease were investigated for effect modification . They concluded that use of somatostatin was more beneficial for younger (<47) female patients. One of the 3 trials had a cross-over design, therefore participants were treated both with the active and the control treatment in different time periods. In order to use these data for our illustrative purposes, we removed the cross-over design and used all patients only once, by selecting half of the patients from the active period and the other half (sex and age-matched) from the control period. Therefore, differences between our results and those reported in the original article may occur.
+
+
+
+## 2.2 Statistical approaches
+## 2.2.1 Notation
+
+As described in section 2, both empirical example datasets are composed of multiple randomised trials. We will adopt the following notation throughout our manuscript:
+
+
+* The trials as j = 1,2, ...,$N_j$, 
+* Trial participants as i = 1,2, ...,$n_i$, 
+* Standardised  $Age_{ij}  = \frac{Age_{ij} - 30}{60}$
+* The per trial mean of age as $\overline{Age_j} = \overline{\frac{Age_{ij} - 30}{60}}$
+ $Age_{ij} - \overline{Age_j}$
+
+
+
+
+#### 2.2.1 Centred One-stage IPD-MA 
+
+We follow recent recommendations [@Hua_2016] and centre per trial the continuous effect modifier. This way we can separate the within and across trial information of the effect modification. We considered two models one assuming linearity in both treatment arms and one assuming quadratic shape for the treated.
+
+
+Therefore, the statistical models will be: 
+
+$g(E(Y_{ij})) = \beta_{0j} + \beta_{Tj} \times Treatment_{ij} + \beta_A \times Treatment_{ij} \times  \overline{Age_j}  + \beta_{W} \times Treatment_{ij} \times (Age_{ij} - \overline{Age_j})$   and  $g(E(Y_{ij})) = \beta_{0j} + \beta_{Tj} \times Treatment_{ij} + \beta_A \times Treatment_{ij} \times  \overline{Age_j}  + \beta_{W} \times Treatment_{ij} \times (Age_{ij} - \overline{Age_j})^2$    where:
+
+$\beta_{0j} \stackrel{}{\sim} Norm(b_0, \sigma_0^2)$,  $\beta_{Tj} \stackrel{}{\sim} Norm(b_T, \sigma_T^2)$, and $\beta_A$ and $\beta_w$ where considered fixed.
+
+
+#### 2.2.2 Two-stage meta-analysis of fractional polynomials
+
+
+Royston and Sauerbrei [@Royston_2004] proposed fractional polynomials as a flexible approach to detect non-linear associations, with interactions using the multivariable fractional polynomials interaction (MFPI) approach. Subsequently, they extended their approach to IPD-MA [@Sauerbrei_2011]. For more technical details and the discussion of three variants of the algorithm, we refer to Royston and Sauerbrei[@Royston_2009].
+
+Hereto, the within each trial statistical model is :
+
+$g(E(Y_{i})_j) = \beta_{0j} + \beta_{Tj} \times Treatment_{ij} + \beta_{X} \times Treatment_{ij} \times (Age_{ij})= \hat g_{c_j}(Age) + \hat g_{T_j}(Age)$ 
+
+As a second step we extracted is the treatment effect function.
+
+$Tr_j(Age)= \hat g_{T_j}(Age) -  \hat g_{c_j}(Age)$
+
+Subsequently we pooled the treatment effect functions using a point wise meta-analysis [@White_2018]. 
+
+
+
+
+
+#### 2.2.3 Generalised additive mixed effects models
+
+Generalised additive models are a form of penalised generalised linear models. One type of penalization is identical to the random effects’ technique introduced by McCullagh et al. [@McCullagh_1983] in the generalised mixed effects models. There we can estimate a separate functional form per trial, given the fixed effects parameters. Therefore, per trial and treatment regime a different shape will be estimate. 
+
+The statistical model will be:
+
+$g(Y_{ij}) = s(Age)_{kj}$, where k the treatment regime.
+
+
+##### 
+\newpage 
+
+# Results
+
+
+```{r Centred one-stage IPD-MA }
+# print(summary(lm(formula = Y~ Age.d + Treatment + I(Treat*(Age.d)^2) , IPD1)), digits =3)
+meanAge= IPD1 %>%
+  group_by(Trial)%>%
+  summarise(meanAge = round(mean(Age.d),3))
+IPD1$meanAge =  rep(meanAge$meanAge,each = 200)
+IPD1$CentredAge = (IPD1$Age.d - IPD1$meanAge)
+
+fit = lmer(Y~ Treat + Age.d + I(Treat*meanAge)  + I(Treat  * CentredAge) +  (Treat |Trial), IPD1)
+
+a= tab_model(fit,title =  "Centred one-stage IPD-MA results", use.viewer = T,
+          show.intercept = T,show.est = T,show.ci = 0.95,show.se = T,show.r2 = T,show.icc = T,show.p = T,show.re.var = T,
+                  string.pred = "Fixed terms" , 
+          pred.labels = c("Intercept","Treatment","Age",
+                          "Per trial mean Age - Treatment interaction","Per trial centred Age - Treatment interaction"))
+
+webshot::webshot(url = "Figs/One-stage_IPDMA.html", file = "Figs/One-stage_IPDMA.png")
+fit2= lmer(Y~ Treat + Age.d + I(Treat*meanAge)  + I(Treat  * CentredAge^2) +  (1 |Trial), IPD1)
+a= tab_model(fit2,title =  "Centred one-stage IPD-MA (with quadratic terms) results", use.viewer = T,file = "Figs/One-stage_IPDMA2.html",
+          show.intercept = T,show.est = T,show.ci = 0.95,show.se = T,show.r2 = T,show.icc = T,show.p = T,show.re.var = T,
+          string.pred = "Fixed terms" ,  digits = 4,
+          pred.labels = c("Intercept","Treatment","Age",
+                          "Per trial mean Age - Treatment interaction",
+                          "Per trial centred Age^2 - Treatment interaction"))
+webshot::webshot(url = "Figs/One-stage_IPDMA.html", file = "Figs/One-stage_IPDMA2.png")
+```
+
+
+
+
+
+```{r One-Stage smoothing splines in Somatostatin }
+
+# Note: this is really not the best fitting model for the data:
+m1 <- bam(dif_liver_perc ~ Drug*Gender*Age + 
+            s(Study,Age,bs = "re") + 
+            s(Study,Gender,bs = "re") + 
+            s(Study,Drug,bs="re") , data = somatostatin,method="fREML" ,  discrete=TRUE)
+
+
+# Change the colors:
+plot_data(m1, view="Age", split_by="Drug", type='p', col=c("#6A659999","#79AF9799"), alpha=1)
+
+
+par(mfrow=c(2,1), cex=0.75)
+plot_diff(m1, view='Age',cond = list(Gender="Male") , comp=list(Drug=c("placebo", "somatostatin")), 
+    rm.ranef=TRUE, col = "darkblue",print.summary = F, main = "Men", 
+    xlab = "Age (in years)",
+    ylab = "Estimated treatment difference") 
+
+plot_diff(m1, view='Age',cond = list(Gender="Female") , comp=list(Drug=c("placebo", "somatostatin")), 
+    rm.ranef=TRUE, col = "darkgreen",print.summary = F, main = "Women",
+    xlab = "Age (in years)",
+    ylab = "Estimated treatment difference ")
+
+```
+
+
+
+```{r}
+# version 1:
+plot_smooth(m1, view="Age", plot_all="Drug", rm.ranef=TRUE, se = 2.56,print.summary = T)
+
+```
+
+```{r One-Stage smoothing splines in AOM study }
+
+# Note: this is really not the best fitting model for the data:
+m1 <- bam(poutcome ~bilat_0*treat*age + s(age) + 
+            s(study,age,bs = "re") + 
+            s(study,bilat_0,bs = "re") + 
+            s(study,treat,bs="re") , family = binomial("identity"), data = IPDMA, method="fREML" ,  discrete=TRUE)
+
+par(mfrow=c(2,1), cex=0.75)
+plot_smooth(m1, view="age", plot_all="treat", cond = list(bilat_0="No") ,  rm.ranef=TRUE, se = 1.96)
+plot_diff(m1, view='age',cond = list(bilat_0="No") , 
+          comp=list(treat=c("Placebo", "Antibiotics")), 
+          rm.ranef=TRUE, col = "darkblue",print.summary = F, main = "Children with unilateral otitis media", 
+          xlab = "Age (in years)", ylab = "Estimated difference (log-scale)")
+```
+
+
+
+```{r}
+par(mfrow=c(2,1), cex=0.75)
+plot_smooth(m1, view="age", plot_all="treat", cond = list(bilat_0="Yes") ,  
+            rm.ranef=TRUE, sim.ci=TRUE, se = 0.8, transform = "exp")
+plot_diff(m1, view='age',cond = list(bilat_0="Yes") , comp=list(treat=c("Placebo", "Antibiotics")), 
+    rm.ranef=TRUE, col = "darkgreen",print.summary = F, main = "Children with bilateral otitis media",
+    xlab = "Age (in years)", mark.diff = T,col.diff =  "purple",sim.ci=TRUE, 
+    ylab = "Estimated difference (log-scale)")
+```
+
+
+# Discussion
+
+In our paper, we described and illustrated a new approach to model and investigate effect modification when the potential effect modifier is not linearly associated with the outcome. Furthermore, we applied our method on two empirical examples and one extreme-case simulated IPD-set. Clinical decision making may be based on either relative or absolute treatment effects. Our results show that it may be important to account for the outcome-variable functional shape. Two-stage methods suffered from ecological bias in our simulated example. Finally, we showed that effect modification may not be linear and therefore not possible to be encapsuled in a single interaction term. Thus treatment effect functions along with illustrative methods such treatment effect plots may be better options for decision making.
+
+
+
+
+
+## 5.1 Comparison with literature
+
+
+## 5.2 Strengths and limitations
+The major strength of our paper is that we propose a novel approach for IPD-MA of RCTs. Particularly, we considered generalised additive mixed effects models with smoothing splines. We showed that smoothing splines make minimal shape assumptions as they minimise the sum of maximum likelihood and a penalty term for the wingliness of the line.
+
+## 5.3 Implications for practice
+
+We believe that our approach may change the point of view of IPD-MA conducted. Specifically, the naive idea that....
+
+
+## 5.4 Conclusions
+We propose the use of one-stage generalised additive model with smoothing spline. This approach makes no assumptions over the functional shape and the cut-point where it changes. Finally, when combined with the treatment effect plot researchers .
+
+
+# References
+
+
+
+
