@@ -1,0 +1,47 @@
+---
+title: "Appendix"
+author: "Michail Belias"
+date: "7/23/2019"
+output: pdf_document
+---
+
+
+
+A spline function is a piecewise polynomial function joined together with certain continuity conditions satisfied.
+
+# Polynomial splines
+
+## _Linear Spline_
+
+For a set of data points usually termed knots: , the linear spline is $x_i, y_i , i = 1,2,....,\kappa$ the linear spline is defined as $S_i (x) = \alpha + \beta \times x$ for $x \in [x_i , x_{i+1}], i =1,2,...\kappa$. Since the spline has to be continuous ($C^0$), $s_i(x_i) = y_i = s_{i+1}(x_{i})$.  This yields 2($\kappa$-2) equations to solve at the interior points. Linear splines are often called minimum-maximum functions. 
+
+*an example*
+
+```{r  fig.cap='two plots', fig.subcap= c('A figure', 'A table'), out.width = '.49\\linewidth', echo = F, fig.align='center'}
+library(knitr)
+library(gridExtra)
+library(grid)
+set.seed(5)
+dt = data.frame(X = seq(0,10, by = 1), y = round(runif(11, -10,10)))
+
+with(dt, plot(X,y, main = "Linear splines example with 5 knots", ylim = c(max(dt$y)+2, min(dt$y) -2)))
+lines(spline(x = dt$X,y = dt$y,n = 5,method = "natural" ))
+abline(v = spline(x = dt$X,y = dt$y,n = 5,method = "natural" )$x, col="red", lwd=3, lty=2 )
+```
+
+
+# Cubic splines are smoothest interpolators
+
+If we consider a set of points $x_i , y_i :  i = 1,2, ... , \kappa$, where $x_i < x_{i+1}$. The cubic spline $g(x)$ is a function made up of sections of cubic polynomial derived within the intervals [$x_i, x_{i+1}$], with the following properties:
+
+* minimise the $\sum_{i=1}^\kappa (y_i - g(x_i))^2 + \lambda \int g^{''}(x)^2dx$
+* $g^{''}(x_1)=g^{''}(x_n) $
+
+
+
+# B-splines in a nutshell
+
+
+
+
+
