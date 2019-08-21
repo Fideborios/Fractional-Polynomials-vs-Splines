@@ -14,3 +14,4 @@ papred<-function(x,beta,sigmau){
   pa<-apply(x,1,predu,"beta"=beta,"u"=u)  
   return(pa)
 }
+

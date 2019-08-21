@@ -73,7 +73,7 @@ if(!require("lme4")) install.packages("lme4")
 if(!require("lmerTest")) install.packages("lmerTest")
 ## Load mcgv to fit gamms and bamm
 if(!require("mgcv")) install.packages("mgcv")
-
+if(!require("splines")) install.packages("splines")
 library(gamm4)
 library(meta)
 library(mvmeta)
@@ -91,18 +91,6 @@ opts_chunk$set(fig.path='Figs/',                # The path where to save the fig
                comment = ""                     #
                )
 
-
-
-
-## ----loading the datasets------------------------------------------------
-IPDMA <- read_sas("Data/IPDMA.sas7bdat")
-names(IPDMA) <- tolower(names(IPDMA))
-IPDMA$treat =  factor(IPDMA$treat  , labels = c("Placebo","Antibiotics") )
-IPDMA$study = factor(IPDMA$study, labels = c("Damoiseaux","Burke","Appelman","Little","Saux","McCormick"))
-IPDMA$bilat_0 =  factor(IPDMA$bilat_0  , labels = c("No","Yes") )
-Tubano <- read_csv("Data/VolledigeDS.csv")
-somatostatin <- read_sav("Data/somatostatin.sav")
-source("Data/somatostatin_descriptives.R")
 
 
 
@@ -167,7 +155,7 @@ df$Treatment =  factor(df$Treat, levels = c(0,1), labels = c("Control","Treated"
 df = df %>% mutate(Study = factor(Study, levels = c("1st Study","2nd Study",
                                              "3rd Study","4th Study", "5th Study" )))
 
-
+rm(noise,noise2)
 
 
 ## ----eval=FALSE----------------------------------------------------------
@@ -225,16 +213,35 @@ ggplot(aes(x = BMI, `Mortality risk 2`, linetype= Treatment, color= Treatment)) 
         legend.position = "top") 
 
 
-## ----Script for smoothing splines----------------------------------------
+## ----Script for Basis splines (cubic)------------------------------------
+
+rm(list=ls()[! ls() %in% c("df")]) ### To clear all enviroment besides the data-set
+source(file = "Functions/help functions.R")
+
+### fit a preliminary model in order to get the lengths of the coefficients and 
+### use it as a guide for further data manipulation
+
+Knots =   c(min(df$BMI),20,25,30,35,max(df$BMI))
+fit = gam(Y~ bs(x = BMI,knots = Knots,intercept = T,degree = 3,
+                      Boundary.knots = c(min(df$BMI),max(df$BMI)))*Treatment , 
+          family = binomial("logit"), data = df)
+
+#####
+#        
+#        
+
+### Create an empty data frame for the fitted values of the gam
 predicted.values = data.frame(   BMI= rep(rep(seq(18.5,40, length.out = 1000),each=2)),
                                  Treatment = rep(rep(rep(levels(df$Treatment),500),2)),
-                                 matrix(NA, nrow = 2000,ncol=10,
-                                        dimnames = list(NULL, apply(expand.grid(c("fit","se.fit"),c(1:5)),1, paste, collapse=""))))
+                                 matrix(NA, nrow = 2000,ncol=10,dimnames = list(NULL, apply(expand.grid(c("fit","se.fit"),c(1:5)),1, paste, collapse=""))))
+### Create an empty matrix for the estimated splines coefficients
 
-estimated.coefficients = matrix(NA,ncol = 12,nrow=5,dimnames = list( apply(expand.grid(c("Study"),c(1:5)),1, paste, collapse=" "),
-c(1:12)))
+estimated.coefficients = matrix(NA,ncol = length(fit$coefficients),nrow=5,dimnames = list( apply(expand.grid(c("Study"),c(1:5)),1, paste, collapse=" "),
+c(1:length(fit$coefficients))))
 
-S = matrix(NA, ncol=78, nrow = 5 )
+### Create an empty matrix for the variance-covariance matrix of the coefficients
+
+S = matrix(NA, ncol=sum(c(1:length(fit$coefficients))), nrow = 5 )
 
 
 k=3
@@ -244,26 +251,30 @@ for( i in c("1st Study","2nd Study","3rd Study","4th Study", "5th Study" )){
 minidf = df%>%
     filter(Study == i)
 
+  
+#ggplot(minidf, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+#    geom_line(aes(y = expit(predict(fit))))
+
 # Fit the GAM
 
-fit = gam(Y~ s(BMI, bs = "cr", by = Treatment,k=6,fx = T,m = 2)+ Treatment, 
-          knots = list(BMI = c(min(minidf$BMI),20,25,30,35,max(minidf$BMI))), family = binomial("logit"), data = minidf)
+fit = gam(Y~ bs(x = BMI,knots = Knots,intercept = T,degree = 3,
+                      Boundary.knots = c(min(df$BMI),max(df$BMI)))*Treatment+ Treatment, 
+          family = binomial("logit"), data = minidf)
 
 ## Extract the fitted lines
+new.data = predicted.values[,1:2]
 
-temp.pred.df = data.frame(predict(fit,se.fit = T, 
-                                  newdata = data.frame(BMI= rep(seq(18.5,40, length.out = 1000),each=2),
-                                                       Treatment = rep(rep(levels(df$Treatment),500),2))))
+temp.pred.df = data.frame(predict.gam(fit,se.fit = T,newdata.guaranteed = T,newdata = new.data))
+
+### Store the fitted values with their 95% CI in the data.frame
 
 predicted.values[,k] =  temp.pred.df[,1]
 predicted.values[,k+1] =  temp.pred.df[,2]
 
 
 ### Extract the coefficients and their standard errors for mvmeta
-
 estimated.coefficients[j,] = fit$coefficients
 S[j,] = vcov(fit)[lower.tri(vcov(fit), diag = T)]
-
 
 #mat1 <- predict.gam(fit, type = "lpmatrix")
 
@@ -273,62 +284,37 @@ rm(i,minidf,temp.pred.df,fit)
 }
 rm(k,j)
 
-#### Point-wise meta-analysis
+#### Multi-variate meta-analysis
+fit = gam(Y~ bs(x = BMI,knots = Knots,intercept = T,degree = 3,
+                      Boundary.knots = c(min(df$BMI),max(df$BMI)))*Treatment , 
+          family = binomial("logit"), data = df)
+Xp =  predict.gam(fit, type="lpmatrix",se.fit = T)
 
-predicted.values$Overall_fit = NA
-predicted.values$Overall_se.fit =  NA
-
-for(i in 1:dim(predicted.values)[1]){
-  minidf =  predicted.values[i,]
-  betas =  t(predicted.values[i,]%>%
-    select(-contains("."))%>%
-    select(contains("fit")))
-  se.betas =  t(predicted.values[i,]%>%
-    select(contains("se.fit")))
-  
-  
-  meta = metagen(TE = betas, seTE = se.betas, hakn = T)
-  predicted.values[i,]$Overall_fit = meta$TE.random
-  predicted.values[i,]$Overall_se.fit =  meta$seTE.random
-  
-  rm(i)
-}
+mv.fit = mvmeta(estimated.coefficients, S)
 
 
-long.predicted.values = predicted.values%>%
-  select(-contains("se.fit"))%>%
-  gather(key ,value= fit, -c("BMI","Treatment" ))
 
-long.predicted.values$se.fit =as.vector(predicted.values%>%
-  select(contains("se.fit"))%>%
-  gather(key ,value= se.fit)%>%
-  select(contains("se.fit")))
+mv.vcov =  as.data.frame(cbind(Lower = coef(mv.fit)-qt(0.975,df = Inf) *sqrt(diag(vcov(mv.fit))),
+                 Upper = coef(mv.fit)+qt(0.975,df = Inf) *sqrt(diag(vcov(mv.fit)))))
 
-  long.predicted.values =  long.predicted.values%>%
-  mutate(Study=recode(key,
-                'fit1' = "1st Study",
-                'fit2' = "2nd Study",
-                'fit3' = "3rd Study",
-                'fit4' = "4th Study",
-                'fit5'= "5th Study",
-                'Overall_fit'= "Pooled fit"))
-  
-source(file = "Functions/help functions.R")
-  long.predicted.values$Lower = long.predicted.values$fit - 1.96*long.predicted.values$se.fit$se.fit
-  long.predicted.values$Upper = long.predicted.values$fit + 1.96*long.predicted.values$se.fit$se.fit
-    
-  long.predicted.values$Lower =  expit(long.predicted.values$Lower)
-  long.predicted.values$Upper =  expit(long.predicted.values$Upper)
-  long.predicted.values$probability =  expit(long.predicted.values$fit)
-  
+prediction.interval.mvmeta =  Xp%*% coef(mv.fit)
+prediction.interval.mvmeta.lower =  Xp%*%mv.vcov$Lower
+prediction.interval.mvmeta.upper =  Xp%*% mv.vcov$Upper
 
-ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
-  geom_line() + facet_wrap(Study~., ncol = 2, dir="v")+ 
+mvmeta.df = cbind(df[,c("Study","BMI","Treatment")],
+                  fit =  prediction.interval.mvmeta, 
+                  Lower= prediction.interval.mvmeta.lower,
+                  Upper =prediction.interval.mvmeta.upper )
+
+ggplot(mvmeta.df,aes(x = BMI, fit, linetype= Treatment, color= Treatment)) + 
+  geom_line()+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Cubic splines approach with 6 knots",caption = "Figure 3.") + 
+  labs(title = "Multi-variate meta-analysis approache",
+       subtitle = "Trying to correct the CIs" , 
+       caption = "Figure 6.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
-  theme(plot.title    = element_text(hjust = 0.5,size = 24,face = "bold.italic"),
-        plot.subtitle = element_text(hjust = 0.5,size = 32,face = "bold.italic"),
+  theme(plot.title    = element_text(hjust = 0.5,size = 32,face = "bold.italic"),
+        plot.subtitle = element_text(hjust = 0.5,size = 24,face = "bold.italic"),
         axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
         plot.margin = unit(c(0,0,0,0), "cm"),
         panel.spacing = unit(0, "lines"),
@@ -343,16 +329,122 @@ ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, colo
         legend.position = "top") 
 
 
-## ----Script for B-splines------------------------------------------------
+#### Point-wise meta-analysis
+#### Here we meta-analyse the fitted lines
+
+#### We generate 2 new columns to accept the Pooled estimates
+predicted.values$Overall_fit = NA
+predicted.values$Overall_se.fit =  NA
+
+for(i in 1:dim(predicted.values)[1]){
+  minidf =  predicted.values[i,]
+  betas =  t(predicted.values[i,]%>%
+    select(-contains("."))%>%
+    select(-contains("Overall"))%>%
+    select(contains("fit")))
+  se.betas =  t(predicted.values[i,]%>%
+                      select(-contains("Overall"))%>%
+                  select(contains("se.fit")))
+  
+  
+  meta = metagen(TE = betas, seTE = se.betas, hakn = T, method.tau = "EB")
+  predicted.values[i,]$Overall_fit = meta$TE.random
+  predicted.values[i,]$Overall_se.fit =  meta$seTE.random
+  # print(i) for controlling erroneous meta-analyses
+  rm(i)
+}
+
+
+
+
+#### Create a long object that contains the predicted lines with their standard error
+long.predicted.values = predicted.values%>%
+  select(-contains("se.fit"))%>%
+  gather(key ,value= fit, -c("BMI","Treatment" ))
+### Save the predicted standard errors in the long object
+long.predicted.values$se.fit =
+  as.vector(predicted.values%>%
+  select(contains("se.fit"))%>%
+  gather(key ,value= se.fit)%>%
+  select(contains("se.fit")))
+### Recode the fit values to Study IDs
+  long.predicted.values =  long.predicted.values%>%
+  mutate(Study=recode(key,
+                'fit1' = "1st Study",
+                'fit2' = "2nd Study",
+                'fit3' = "3rd Study",
+                'fit4' = "4th Study",
+                'fit5'= "5th Study",
+                'Overall_fit'= "Pooled fit"))
+### Load some help function for expit transformation
+
+source(file = "Functions/help functions.R")
+  
+### Calculate the CIs in log-scale using 1.96*standard errors 
+  
+  long.predicted.values$Lower = long.predicted.values$fit - 1.96*long.predicted.values$se.fit$se.fit
+  long.predicted.values$Upper = long.predicted.values$fit + 1.96*long.predicted.values$se.fit$se.fit
+  
+### Back transform to absolute risk the logit transformed predicted values  
+  long.predicted.values$Lower =  expit(long.predicted.values$Lower)
+  long.predicted.values$Upper =  expit(long.predicted.values$Upper)
+  long.predicted.values$probability =  expit(long.predicted.values$fit)
+
+  
+
+### Plot the fitted lines per study and Pooled
+
+ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
+  geom_line() + facet_wrap(Study~., ncol = 2, dir="v")+ 
+  ylab("Estimated Mortality risk") + scale_color_jama()+ 
+  labs(title = "Cubic basis splines with 6 knots",
+       subtitle = "Knots are based on BMI categories [18.5-20,20-25,25-30,30-35,35-40]" , 
+       caption = "Figure 4.") + 
+  theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
+  theme(plot.title    = element_text(hjust = 0.5,size = 32,face = "bold.italic"),
+        plot.subtitle = element_text(hjust = 0.5,size = 24,face = "bold.italic"),
+        axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
+        plot.margin = unit(c(0,0,0,0), "cm"),
+        panel.spacing = unit(0, "lines"),
+        strip.text = element_text(face="bold", size=16, hjust = 0.5),
+        axis.title.y = element_text(size = 30),
+        axis.title.x = element_text(size = 30),
+        axis.text.y = element_text(face="bold",  size=18),
+        legend.key.size = unit(1.5, "cm"),
+        legend.key.width = unit(1.5,"cm"),
+        legend.text=element_text(size=20, hjust = 0), 
+        legend.title =element_text(size=28, hjust = 0.5),
+        legend.position = "top") 
+
+
+## ----Script for smoothing splines----------------------------------------
+
+rm(list=ls()[! ls() %in% c("df")]) ### To clear all enviroment besides the data-set
+source("Functions/help functions.R")
+### fit a preliminary model in order to get the lengths of the coefficients and 
+### use it as a guide for further data manipulation
+
+fit = gam(Y ~ s(BMI,bs="tp",by = Treatment),
+          family = binomial("logit"), data = df, nthreads = 8, method = "GCV.Cp")
+
+#ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+#    geom_line(aes(y = expit(predict(fit))))
+
+
+
+### Create an empty data frame for the fitted values of the gam
 predicted.values = data.frame(   BMI= rep(rep(seq(18.5,40, length.out = 1000),each=2)),
                                  Treatment = rep(rep(rep(levels(df$Treatment),500),2)),
-                                 matrix(NA, nrow = 2000,ncol=10,
-                                        dimnames = list(NULL, apply(expand.grid(c("fit","se.fit"),c(1:5)),1, paste, collapse=""))))
+                                 matrix(NA, nrow = 2000,ncol=10,dimnames = list(NULL, apply(expand.grid(c("fit","se.fit"),c(1:5)),1, paste, collapse=""))))
 
-estimated.coefficients = matrix(NA,ncol = 12,nrow=5,dimnames = list( apply(expand.grid(c("Study"),c(1:5)),1, paste, collapse=" "),
-c(1:12)))
+### Create an empty matrix for the estimated splines coefficients
 
-S = matrix(NA, ncol=78, nrow = 5 )
+estimated.coefficients = matrix(NA,ncol = length(fit$coefficients),nrow=5,dimnames = list( apply(expand.grid(c("Study"),c(1:5)),1, paste, collapse=" "),
+c(1:length(fit$coefficients))))
+
+### Create an empty matrix for the variance-covariance matrix of the coefficients
+
+S = matrix(NA, ncol=sum(c(1:length(fit$coefficients))), nrow = 5 )
 
 
 k=3
@@ -364,8 +456,8 @@ minidf = df%>%
 
 # Fit the GAM
 
-fit = gam(Y~ s(BMI, bs = "cr", by = Treatment,k=6,fx = T,m = 2)+ Treatment, 
-          knots = list(BMI = c(min(minidf$BMI),20,25,30,35,max(minidf$BMI))), family = binomial("logit"), data = minidf)
+fit = gam(Y ~ s(BMI,bs="tp",by = Treatment),
+          family = binomial("logit"), data = minidf, nthreads = 8, method = "GCV.Cp")
 
 ## Extract the fitted lines
 
@@ -373,12 +465,13 @@ temp.pred.df = data.frame(predict(fit,se.fit = T,
                                   newdata = data.frame(BMI= rep(seq(18.5,40, length.out = 1000),each=2),
                                                        Treatment = rep(rep(levels(df$Treatment),500),2))))
 
+### Store the fitted values with their 95% CI in the data.frame
+
 predicted.values[,k] =  temp.pred.df[,1]
 predicted.values[,k+1] =  temp.pred.df[,2]
 
 
 ### Extract the coefficients and their standard errors for mvmeta
-
 estimated.coefficients[j,] = fit$coefficients
 S[j,] = vcov(fit)[lower.tri(vcov(fit), diag = T)]
 
@@ -392,7 +485,9 @@ rm(i,minidf,temp.pred.df,fit)
 rm(k,j)
 
 #### Point-wise meta-analysis
+#### Here we meta-analyse the fitted lines
 
+#### We generate 2 new columns to accept the Pooled estimates
 predicted.values$Overall_fit = NA
 predicted.values$Overall_se.fit =  NA
 
@@ -400,28 +495,34 @@ for(i in 1:dim(predicted.values)[1]){
   minidf =  predicted.values[i,]
   betas =  t(predicted.values[i,]%>%
     select(-contains("."))%>%
+    select(-contains("Overall"))%>%
     select(contains("fit")))
   se.betas =  t(predicted.values[i,]%>%
-    select(contains("se.fit")))
+                      select(-contains("Overall"))%>%
+                  select(contains("se.fit")))
   
   
-  meta = metagen(TE = betas, seTE = se.betas, hakn = T)
+  meta = metagen(TE = betas, seTE = se.betas, hakn = T, method.tau = "EB")
   predicted.values[i,]$Overall_fit = meta$TE.random
   predicted.values[i,]$Overall_se.fit =  meta$seTE.random
-  
+  # print(i) for controlling erroneous meta-analyses
   rm(i)
 }
 
 
+
+
+#### Create a long object that contains the predicted lines with their standard error
 long.predicted.values = predicted.values%>%
   select(-contains("se.fit"))%>%
   gather(key ,value= fit, -c("BMI","Treatment" ))
-
-long.predicted.values$se.fit =as.vector(predicted.values%>%
+### Save the predicted standard errors in the long object
+long.predicted.values$se.fit =
+  as.vector(predicted.values%>%
   select(contains("se.fit"))%>%
   gather(key ,value= se.fit)%>%
   select(contains("se.fit")))
-
+### Recode the fit values to Study IDs
   long.predicted.values =  long.predicted.values%>%
   mutate(Study=recode(key,
                 'fit1' = "1st Study",
@@ -430,23 +531,187 @@ long.predicted.values$se.fit =as.vector(predicted.values%>%
                 'fit4' = "4th Study",
                 'fit5'= "5th Study",
                 'Overall_fit'= "Pooled fit"))
-  
+### Load some help function for expit transformation
+
 source(file = "Functions/help functions.R")
+  
+### Calculate the CIs in log-scale using 1.96*standard errors 
+  
   long.predicted.values$Lower = long.predicted.values$fit - 1.96*long.predicted.values$se.fit$se.fit
   long.predicted.values$Upper = long.predicted.values$fit + 1.96*long.predicted.values$se.fit$se.fit
-    
+  
+### Back transform to absolute risk the logit transformed predicted values  
   long.predicted.values$Lower =  expit(long.predicted.values$Lower)
   long.predicted.values$Upper =  expit(long.predicted.values$Upper)
   long.predicted.values$probability =  expit(long.predicted.values$fit)
   
+### Plot the fitted lines per study and Pooled
 
 ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
   geom_line() + facet_wrap(Study~., ncol = 2, dir="v")+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Cubic splines approach with 6 knots",caption = "Figure 3.") + 
+  labs(title = "Smoothing splines approach",
+       caption = "Figure 3.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
-  theme(plot.title    = element_text(hjust = 0.5,size = 24,face = "bold.italic"),
-        plot.subtitle = element_text(hjust = 0.5,size = 32,face = "bold.italic"),
+  theme(plot.title    = element_text(hjust = 0.5,size = 32,face = "bold.italic"),
+        plot.subtitle = element_text(hjust = 0.5,size = 24,face = "bold.italic"),
+        axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
+        plot.margin = unit(c(0,0,0,0), "cm"),
+        panel.spacing = unit(0, "lines"),
+        strip.text = element_text(face="bold", size=16, hjust = 0.5),
+        axis.title.y = element_text(size = 30),
+        axis.title.x = element_text(size = 30),
+        axis.text.y = element_text(face="bold",  size=18),
+        legend.key.size = unit(1.5, "cm"),
+        legend.key.width = unit(1.5,"cm"),
+        legend.text=element_text(size=20, hjust = 0), 
+        legend.title =element_text(size=28, hjust = 0.5),
+        legend.position = "top") 
+
+
+## ----Script for Penalised splines----------------------------------------
+
+rm(list=ls()[! ls() %in% c("df")]) ### To clear all enviroment besides the data-set
+
+### fit a preliminary model in order to get the lengths of the coefficients and 
+### use it as a guide for further data manipulation
+
+Knots =   c(min(df$BMI),20,25,30,35,max(df$BMI))
+
+fit = gam(Y~ BMI + s(BMI,bs = "ps",by = Treatment,fx = T,k = 10,m = c(2,2)),
+          gamma =1,knots = list(BMI= c(seq(min(df$BMI)-1,min(df$BMI),length.out = 5),Knots[-c(1,6)],seq(max(df$BMI),max(df$BMI) + 1,length.out = 5)) ),
+          family = binomial("logit"), data = df)
+
+#ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+#    geom_line(aes(y = expit(predict(fit)))) + 
+#    geom_vline(xintercept = fit$smooth[[1]]$knots,linetype =2, show.legend = F)
+
+
+### Create an empty data frame for the fitted values of the gam
+predicted.values = data.frame(   BMI= rep(rep(seq(18.5,40, length.out = 1000),each=2)),
+                                 Treatment = rep(rep(rep(levels(df$Treatment),500),2)),
+                                 matrix(NA, nrow = 2000,ncol=10,dimnames = list(NULL, apply(expand.grid(c("fit","se.fit"),c(1:5)),1, paste, collapse=""))))
+
+### Create an empty matrix for the estimated splines coefficients
+
+estimated.coefficients = matrix(NA,ncol = length(fit$coefficients),nrow=5,dimnames = list( apply(expand.grid(c("Study"),c(1:5)),1, paste, collapse=" "),
+c(1:length(fit$coefficients))))
+
+### Create an empty matrix for the variance-covariance matrix of the coefficients
+
+S = matrix(NA, ncol=sum(c(1:length(fit$coefficients))), nrow = 5 )
+
+
+k=3
+j=1
+for( i in c("1st Study","2nd Study","3rd Study","4th Study", "5th Study" )){
+
+minidf = df%>%
+    filter(Study == i)
+
+# Fit the GAM
+fit = gam(Y~ BMI + s(BMI,bs = "ps",by = Treatment,fx = T,k = length(c(seq(min(df$BMI)-1,min(df$BMI),length.out = 5),Knots[-c(1,6)],seq(max(df$BMI),max(df$BMI) + 1,length.out = 5))) - 4,m = c(2,2)),
+          gamma =1,knots = list(BMI=  c(seq(min(df$BMI)-1,min(df$BMI),length.out = 5),Knots[-c(1,6)],seq(max(minidf$BMI),max(minidf$BMI) + 1,length.out = 5))),
+          family = binomial("logit"), data = minidf)
+
+
+## Extract the fitted lines
+
+temp.pred.df = data.frame(predict(fit,se.fit = T, 
+                                  newdata = data.frame(BMI= rep(seq(18.5,40, length.out = 1000),each=2),
+                                                       Treatment = rep(rep(levels(df$Treatment),500),2))))
+
+### Store the fitted values with their 95% CI in the data.frame
+
+predicted.values[,k] =  temp.pred.df[,1]
+predicted.values[,k+1] =  temp.pred.df[,2]
+
+
+### Extract the coefficients and their standard errors for mvmeta
+estimated.coefficients[j,] = fit$coefficients
+S[j,] = vcov(fit)[lower.tri(vcov(fit), diag = T)]
+
+
+#mat1 <- predict.gam(fit, type = "lpmatrix")
+
+k=k+2
+j=j+1
+rm(i,minidf,temp.pred.df,fit)
+}
+rm(k,j)
+
+#### Point-wise meta-analysis
+#### Here we meta-analyse the fitted lines
+
+#### We generate 2 new columns to accept the Pooled estimates
+predicted.values$Overall_fit = NA
+predicted.values$Overall_se.fit =  NA
+
+for(i in 1:dim(predicted.values)[1]){
+  minidf =  predicted.values[i,]
+  betas =  t(predicted.values[i,]%>%
+    select(-contains("."))%>%
+    select(-contains("Overall"))%>%
+    select(contains("fit")))
+  se.betas =  t(predicted.values[i,]%>%
+                      select(-contains("Overall"))%>%
+                  select(contains("se.fit")))
+  
+  
+  meta = metagen(TE = betas, seTE = se.betas, hakn = T, method.tau = "EB")
+  predicted.values[i,]$Overall_fit = meta$TE.random
+  predicted.values[i,]$Overall_se.fit =  meta$seTE.random
+  # print(i) # for controlling erroneous meta-analyses
+  rm(i)
+}
+
+
+
+
+#### Create a long object that contains the predicted lines with their standard error
+long.predicted.values = predicted.values%>%
+  select(-contains("se.fit"))%>%
+  gather(key ,value= fit, -c("BMI","Treatment" ))
+### Save the predicted standard errors in the long object
+long.predicted.values$se.fit =
+  as.vector(predicted.values%>%
+  select(contains("se.fit"))%>%
+  gather(key ,value= se.fit)%>%
+  select(contains("se.fit")))
+### Recode the fit values to Study IDs
+  long.predicted.values =  long.predicted.values%>%
+  mutate(Study=recode(key,
+                'fit1' = "1st Study",
+                'fit2' = "2nd Study",
+                'fit3' = "3rd Study",
+                'fit4' = "4th Study",
+                'fit5'= "5th Study",
+                'Overall_fit'= "Pooled fit"))
+### Load some help function for expit transformation
+
+source(file = "Functions/help functions.R")
+  
+### Calculate the CIs in log-scale using 1.96*standard errors 
+  
+  long.predicted.values$Lower = long.predicted.values$fit - 1.96*long.predicted.values$se.fit$se.fit
+  long.predicted.values$Upper = long.predicted.values$fit + 1.96*long.predicted.values$se.fit$se.fit
+  
+### Back transform to absolute risk the logit transformed predicted values  
+  long.predicted.values$Lower =  expit(long.predicted.values$Lower)
+  long.predicted.values$Upper =  expit(long.predicted.values$Upper)
+  long.predicted.values$probability =  expit(long.predicted.values$fit)
+  
+### Plot the fitted lines per study and Pooled
+
+ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
+  geom_line() + facet_wrap(Study~., ncol = 2, dir="v")+ 
+  ylab("Estimated Mortality risk") + scale_color_jama()+ 
+  labs(title = "Penalised cubic splines approach with 6 inner knots + 8 outer knots",
+       subtitle = "Knots are based on BMI categories [18.5-20,20-25,25-30,30-35,35-40]" , 
+       caption = "Figure 3.") + 
+  theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
+  theme(plot.title    = element_text(hjust = 0.5,size = 32,face = "bold.italic"),
+        plot.subtitle = element_text(hjust = 0.5,size = 24,face = "bold.italic"),
         axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
         plot.margin = unit(c(0,0,0,0), "cm"),
         panel.spacing = unit(0, "lines"),
@@ -462,6 +727,8 @@ ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, colo
 
 
 ## ----eval=FALSE----------------------------------------------------------
+
+
 predicted.values = data.frame(   BMI= rep(rep(seq(18.5,40, length.out = 1000),each=2)),
                                  Treatment = rep(rep(rep(levels(df$Treatment),500),2)),
                                  matrix(NA, nrow = 2000,ncol=10,
@@ -563,7 +830,9 @@ source(file = "Functions/help functions.R")
 ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
   geom_line() + facet_wrap(Study~., ncol = 2, dir="v")+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Penalised cubic splines approach with 10 knots",caption = "Figure 4.") + 
+  labs(title = "Penalised cubic splines approach with 10 knots",
+       subtitle = "6", 
+       caption = "Figure 4.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 24,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 32,face = "bold.italic"),
@@ -593,8 +862,20 @@ assign(data.frame(predict(fit,se.fit = T, newdata = data.frame(BMI= seq(18.5,40,
 }
 
 
-## ------------------------------------------------------------------------
+## ----loading the datasets------------------------------------------------
+IPDMA <- read_sas("Data/IPDMA.sas7bdat")
+names(IPDMA) <- tolower(names(IPDMA))
+IPDMA$treat =  factor(IPDMA$treat  , labels = c("Placebo","Antibiotics") )
+IPDMA$study = factor(IPDMA$study, labels = c("Damoiseaux","Burke","Appelman","Little","Saux","McCormick"))
+IPDMA$bilat_0 =  factor(IPDMA$bilat_0  , labels = c("No","Yes") )
+Tubano <- read_csv("Data/VolledigeDS.csv")
+somatostatin <- read_sav("Data/somatostatin.sav")
+source("Data/somatostatin_descriptives.R")
 
+
+
+## ----Random effects smoothing splines------------------------------------
+source(file = "Functions/help functions.R")
 miniIPD= IPDMA%>% filter((study != "Little"))
 miniIPD$bilat_0 =  factor(miniIPD$bilat_0 , labels = c("Unilateral","Bilateral") )
 m1 <- bam(formula = poutcome ~ as.factor(study)+ treat*bilat_0*age + s(age,by = study)+
