@@ -21,16 +21,16 @@ header-includes:
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
 output:
- word_document:
-  reference_docx: Style and bibliography/templatePaper.docx
- html_document:
-  df_print: paged
  pdf_document:
     fig_caption: yes
     fig_crop: no
     fig_height: 8
     fig_width: 6
     highlight: haddock
+ html_document:
+  df_print: paged
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
  indent: true  
 always_allow_html: yes
 csl: Style and bibliography/journal-of-clinical-epidemiology.csl
@@ -374,7 +374,7 @@ The only difference is that all observations are used and the objective function
 
 #### 3.2.1.3 Penalised splines (p-splines)
 
-P-splines proposed by Eilers and Marx penalise B-spline bases, but with a discrete penalty on the basis coefficients rather than penalising the objective function as smoothing spline do. The penalty is based on the differences of the coefficients of adjacent B-splines. *In simpler words they borrow some of the smoothness from nearby basis estimates $\alpha$*. Still a $\lambda$ penalty term is used for this goal, but the objective function to be minimised now is $ \sum_ $ 
+P-splines proposed by Eilers and Marx penalise B-spline bases, but with a discrete penalty on the basis coefficients rather than penalising the objective function as smoothing spline do. The penalty is based on the differences of the coefficients of adjacent B-splines. *In simpler words they borrow some of the smoothness from nearby basis estimates $\alpha$*. Still a $\lambda$ penalty term is used for this goal, but the objective function to be minimised now is 
 
 
 This reduces the dimensionality to **m** (the number of the B-splines) rather than **n** the number of observations. We can still use a $\lambda$ parameter to control the smoothness of the fit. Although this penalty has no exact interpretation in terms of function shape, P-splines perform almost as well as conventional splines in many occasions, and can perform better in particular cases where it is advantageous to mix different orders of basis and penalty.
