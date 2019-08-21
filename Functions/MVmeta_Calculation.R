@@ -1,5 +1,11 @@
 ### MVmeta
 
+if(!require(tidyverse)) install.packages("tidyverse")
+if(!require(mgcv)) install.packages("mgcv")
+if(!require(splines)) install.packages("splines")
+if(!require(ggsci)) install.packages("ggsci")
+if(!require(mvmeta)) install.packages("mvmeta")
+
 ## ----Code to simulate some data----------------------------------------
 set.seed(25)
 
@@ -78,8 +84,10 @@ expit<-function(rs) {1/(1+exp(-rs))}
 ### use it as a guide for further data manipulation
 
 Knots =   c(min(df$BMI),20,25,30,35,max(df$BMI))
-fit = gam(Y~ bs(x = BMI,knots = Knots,intercept = T,degree = 3,
-                Boundary.knots = c(min(df$BMI),max(df$BMI)))*Treatment+BMI , 
+
+formula =  Y~ bs(x = BMI,knots = Knots,intercept = T,degree = 3,Boundary.knots = c(min(df$BMI),max(df$BMI)))*Treatment
+
+fit = gam( formula = formula, 
           family = binomial("logit"), data = df)
 
 ### Create an empty matrix for the estimated splines coefficients
@@ -102,8 +110,7 @@ for( i in c("1st Study","2nd Study","3rd Study","4th Study", "5th Study" )){
   
 # Fit the GAM using 
   
-  fit = gam(Y~ bs(x = BMI,knots = Knots,intercept = T,degree = 3,
-                  Boundary.knots = c(min(df$BMI),max(df$BMI)))*Treatment +BMI, 
+  fit = gam(formula = formula, 
             family = binomial("logit"), data = minidf)
   
 ### Get the coefficients and their standard errors for mvmeta
@@ -119,8 +126,7 @@ rm(k,j)
 #### Multi-variate meta-analysis
 
 mv.fit = mvmeta(estimated.coefficients, S)
-fit = gam(Y~ BMI+ Treatment + bs(x = BMI,knots = Knots,intercept = T,degree = 3,
-                                 Boundary.knots = c(min(df$BMI),max(df$BMI)))*Treatment+BMI , 
+fit = gam(formula = formula, 
           family = binomial("logit"), data = df)
 
 Xp =  predict.gam(fit, type="lpmatrix")
