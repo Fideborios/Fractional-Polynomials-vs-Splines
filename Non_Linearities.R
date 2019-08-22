@@ -157,7 +157,6 @@ df = df %>% mutate(Study = factor(Study, levels = c("1st Study","2nd Study",
 df = df %>% mutate(Study2 = factor(Study2, levels = c("1st Study","2nd Study",
                                              "3rd Study","4th Study", "5th Study" )))
 
-
 df$dum <- rep(1,dim(df)[1])
 source(file = "Functions/help functions.R")
 rm(noise,noise2)
@@ -183,7 +182,6 @@ df%>%
 ggplot(df, aes(x = BMI, `Mortality risk`, linetype= Treatment, color= Treatment)) + 
   geom_line() + facet_wrap(.~Study, dir="v")+ ylab("Mortality risk") + 
   scale_color_jama()+
-  labs(title = "1st simulated IPD-set", caption = "Figure 1.") + 
   theme_bw()+ 
   theme(plot.title    = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
@@ -206,7 +204,6 @@ df %>%
   bind_rows(df %>% mutate(Study2 = "Studies combined"))%>%
 ggplot(aes(x = BMI, `Mortality risk 2`, linetype= Treatment, color= Treatment)) + 
   geom_line() + facet_wrap(fct_relevel(Study2, "total", after = Inf)~., ncol = 2, dir="v")+ ylab("Mortality risk") + scale_color_jama()+ 
-  labs(title = "2nd simulated IPD-set",caption = "Figure 2.") + 
   theme_bw()+ 
   theme(plot.title    = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
@@ -224,9 +221,9 @@ ggplot(aes(x = BMI, `Mortality risk 2`, linetype= Treatment, color= Treatment)) 
         legend.position = "top") 
 
 
-## ----Script for Basis splines (cubic) Heterogeneous Data-----------------
+## ----Script for B-splines (cubic) Heterogeneous Data---------------------
 
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+ ### To clear all enviroment besides the data-set
 
 ### fit a preliminary model in order to get the lengths of the coefficients and 
 ### use it as a guide for further data manipulation
@@ -373,13 +370,10 @@ long.predicted.values$se.fit =
 
 
 
-## ----Plot of multi-variate meta-analysis Basis splines (cubic) Heterogeneous Data----
+## ----Plot of multi-variate meta-analysis B-splines (cubic) Heterogeneous Data----
 ggplot(mvmeta.df,aes(x = BMI, fit, linetype= Treatment, color= Treatment)) + 
   geom_line()+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Cubic b-splines multi-variate meta-analysis approach",
-       subtitle = "Trying to correct the CIs" , 
-       caption = "Figure 6.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -404,9 +398,6 @@ long.predicted.values[long.predicted.values$Study == "Pooled fit",]%>%
 ggplot(aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
   geom_line() +
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Cubic b-splines with 6 knots",
-       subtitle = "Knots are based on BMI categories [18.5-20,20-25,25-30,30-35,35-40]" , 
-       caption = "Figure 4.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -426,7 +417,7 @@ ggplot(aes(x = BMI, probability, linetype= Treatment, color= Treatment)) +
 
 ## ----Script for Basis splines (cubic) different range Data---------------
 
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+ ### To clear all enviroment besides the data-set
 
 ### fit a preliminary model in order to get the lengths of the coefficients and 
 ### use it as a guide for further data manipulation
@@ -574,14 +565,11 @@ long.predicted.values$se.fit =
 
 
 
-## ----Plot of multi-variate meta-analysis Basis splines (cubic) different range Data----
+## ----Plot of multi-variate meta-analysis B-splines (cubic) different range Data----
 
 ggplot(mvmeta.df,aes(x = BMI, fit, linetype= Treatment, color= Treatment)) + 
   geom_line()+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Multi-variate meta-analysis approache",
-       subtitle = "Trying to correct the CIs" , 
-       caption = "Figure 6.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -600,14 +588,12 @@ ggplot(mvmeta.df,aes(x = BMI, fit, linetype= Treatment, color= Treatment)) +
 
 
 
-## ----Plot of point-wise meta-analysis Basis splines (cubic) different range Data----
+## ----Plot of point-wise meta-analysis B-splines(cubic) different range Data----
 ### Plot the fitted lines per study and Pooled
-
-ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
-  geom_line() + facet_wrap(Study2~., ncol = 2, dir="v")+ 
+long.predicted.values[long.predicted.values$Study == "Pooled fit",]%>%
+ggplot(aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
+  geom_line() +
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Basis splines (cubic) Different range Data",
-       caption = "Figure 3.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -626,7 +612,7 @@ ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, colo
 
 
 ## ----Script for smoothing splines heterogeneous data---------------------
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+ ### To clear all enviroment besides the data-set
 source("Functions/help functions.R")
 ### fit a preliminary model in order to get the lengths of the coefficients and 
 ### use it as a guide for further data manipulation
@@ -754,15 +740,12 @@ long.predicted.values$se.fit =
 
 
 
-## ----Plot of point-wise meta-analysis smoothing splines heterogeneous data----
-  
+## ----Plot of point-wise meta-analysis using smoothing splines heterogeneous data----
 ### Plot the fitted lines per study and Pooled
-
-ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
-  geom_line() + facet_wrap(Study~., ncol = 2, dir="v")+ 
+long.predicted.values[long.predicted.values$Study == "Pooled fit",]%>%
+ggplot(aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
+  geom_line() +
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Smoothing splines approach",
-       caption = "Figure 3.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -782,7 +765,7 @@ ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, colo
 
 ## ----Script for smoothing splines different range Data-------------------
 
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+ ### To clear all enviroment besides the data-set
 
 ### fit a preliminary model in order to get the lengths of the coefficients and 
 ### use it as a guide for further data manipulation
@@ -908,14 +891,11 @@ long.predicted.values$se.fit =
 
 
 ## ----Plot of point-wise meta-analysis smoothing splines different range Data----
- 
-### Plot the fitted lines per study and Pooled
-
-ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
-  geom_line() + facet_wrap(Study2~., ncol = 2, dir="v")+ 
+ ### Plot the fitted lines per study and Pooled
+long.predicted.values[long.predicted.values$Study == "Pooled fit",]%>%
+ggplot(aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
+  geom_line() +
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Smoothing splines approach on different range Data",
-       caption = "Figure 3.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -935,7 +915,7 @@ ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, colo
 
 ## ----Script for P-splines splines heterogeneous data---------------------
 
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
 
 ### fit a preliminary model in order to get the lengths of the coefficients and 
 ### use it as a guide for further data manipulation
@@ -1070,13 +1050,10 @@ long.predicted.values$se.fit =
 
 ## ----Plot of point-wise meta-analysis P-splines splines heterogeneous data----
 ### Plot the fitted lines per study and Pooled
-
-ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
-  geom_line() + facet_wrap(Study~., ncol = 2, dir="v")+ 
+long.predicted.values[long.predicted.values$Study == "Pooled fit",]%>%
+ggplot(aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
+  geom_line() +
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Penalised cubic splines approach with 6 inner knots + 8 outer knots",
-       subtitle = "Knots are based on BMI categories [18.5-20,20-25,25-30,30-35,35-40]" , 
-       caption = "Figure 3.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -1096,7 +1073,7 @@ ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, colo
 
 ## ----Script for P-splines different range Data---------------------------
 
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
 
 ### fit a preliminary model in order to get the lengths of the coefficients and 
 ### use it as a guide for further data manipulation
@@ -1228,12 +1205,10 @@ long.predicted.values$se.fit =
 
 ## ----Plot of point-wise meta-analysis P-splines splines different range Data----
 ### Plot the fitted lines per study and Pooled
-
-ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
-  geom_line() + facet_wrap(Study2~., ncol = 2, dir="v")+ 
+long.predicted.values[long.predicted.values$Study == "Pooled fit",]%>%
+ggplot(aes(x = BMI, probability, linetype= Treatment, color= Treatment)) + 
+  geom_line() +
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "P-splines aproach on different range Data",
-       caption = "Figure 3.") + 
   theme_bw()+ geom_ribbon(mapping = aes(ymin=Lower, ymax=Upper),alpha=0.25)+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -1252,10 +1227,7 @@ ggplot(long.predicted.values,aes(x = BMI, probability, linetype= Treatment, colo
 
 
 ## ----B-splines with random effects heterogeneous data--------------------
-
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
-
-
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
 fit = gam(Y ~ bs(BMI,knots = c(min(df$BMI),20,25,30,35,max(df$BMI)))*Treatment +  
             s(Study,by =  dum,bs = "re"),
           family = binomial("logit"), data = df, nthreads = 8, method = "REML",  discrete=TRUE)
@@ -1268,14 +1240,11 @@ preds$upper = preds$fit +1.96*preds$se.fit
 
 
 
-## ----Plot of point-wise B-splines with random effects heterogeneous data----
-
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+## ----Plot B-splines with random effects heterogeneous data---------------
+ggplot(df, aes(BMI, Y, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "B-splines with random effects",
-       caption = "Figure 3.") + 
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
         axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
@@ -1294,7 +1263,7 @@ ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
 
 ## ----B-splines with random effects different range data------------------
 
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
 
 
 fit = gam(Y2 ~ bs(BMI,knots = c(min(df$BMI),20,25,30,35,max(df$BMI)))*Treatment +  
@@ -1309,14 +1278,11 @@ preds$upper = preds$fit +1.96*preds$se.fit
 
 
 
-## ----Plot of point-wise B-splines with random effects different range data----
-
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+## ----Plot of B-splines with random effects different range data----------
+ggplot(df, aes(BMI, Y2, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "B-splines with random effects (different range data)",
-       caption = "Figure 3.") + 
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
         axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
@@ -1334,7 +1300,7 @@ ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
 
 
 ## ----Smoothing splines with random effects heterogeneous data------------
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
 
 df$dum <- rep(1,dim(df)[1])
 
@@ -1348,12 +1314,49 @@ preds=  predict.gam(fit, se.fit = T,newdata = new.data,newdata.guaranteed = T)
 preds$lower = preds$fit -1.96*preds$se.fit
 preds$upper = preds$fit +1.96*preds$se.fit
 
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+
+## ----Plot of smoothing splines with random effects heterogeneous data----
+ggplot(df, aes(BMI, Y, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Smoothing splines with random effects",
-       caption = "Figure 3.") + 
+  theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
+        plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
+        axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
+        plot.margin = unit(c(0,0,0,0), "cm"),
+        panel.spacing = unit(0, "lines"),
+        strip.text = element_text(face="bold", size=16, hjust = 0.5),
+        axis.title.y = element_text(size = 30),
+        axis.title.x = element_text(size = 30),
+        axis.text.y = element_text(face="bold",  size=18),
+        legend.key.size = unit(1.5, "cm"),
+        legend.key.width = unit(1.5,"cm"),
+        legend.text=element_text(size=20, hjust = 0), 
+        legend.title =element_text(size=28, hjust = 0.5),
+        legend.position = "top") 
+
+
+## ----Smoothing splines with random effects different range data----------
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+
+df$dum <- rep(1,dim(df)[1])
+
+fit = gam(Y2 ~ s(BMI,by = Treatment,bs="tp") +  s(Study2,by =  dum,bs = "re"),
+          family = binomial("logit"), data = df, nthreads = 8, method = "REML",  discrete=TRUE)
+
+new.data = data.frame(cbind(df[,c("Study2","BMI","Treatment")],dum=rep(0,dim(df)[1])))
+preds=  predict.gam(fit, se.fit = T,newdata = new.data,newdata.guaranteed = T)
+
+
+preds$lower = preds$fit -1.96*preds$se.fit
+preds$upper = preds$fit +1.96*preds$se.fit
+
+
+## ----Plot of smoothing splines with random effects different range data----
+ggplot(df, aes(BMI, Y2, linetype= Treatment,color = Treatment)) + geom_point()+
+    geom_line(aes(y = expit(preds$fit))) + 
+  geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
+  ylab("Estimated Mortality risk") + scale_color_jama()+ 
   theme_bw()+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -1371,47 +1374,9 @@ ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
         legend.position = "top") 
 
 
-
-## ----Smoothing splines with random effects different range data----------
-
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
-
-fit = gam(Y2 ~ s(BMI,by = Treatment,bs="tp") +  s(Study2,by = dum,bs = "re"),
-          family = binomial("logit"), data = df, nthreads = 8, method = "REML")
-
-new.data = data.frame(cbind(df[,c("Study2","BMI","Treatment")],dum=rep(0,dim(df)[1])))
-preds=  predict.gam(fit, se.fit = T,newdata = new.data,newdata.guaranteed = T)
-
-preds$lower = preds$fit -1.96*preds$se.fit
-preds$upper = preds$fit +1.96*preds$se.fit
-
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
-    geom_line(aes(y = expit(preds$fit))) + 
-  geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
-  ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "Smoothing splines with random effects (different range data)",
-       caption = "Figure 3.") + 
-  theme_bw()+ 
-  theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
-        plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
-        axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
-        plot.margin = unit(c(0,0,0,0), "cm"),
-        panel.spacing = unit(0, "lines"),
-        strip.text = element_text(face="bold", size=16, hjust = 0.5),
-        axis.title.y = element_text(size = 30),
-        axis.title.x = element_text(size = 30),
-        axis.text.y = element_text(face="bold",  size=18),
-        legend.key.size = unit(1.5, "cm"),
-        legend.key.width = unit(1.5,"cm"),
-        legend.text=element_text(size=20, hjust = 0), 
-        legend.title =element_text(size=28, hjust = 0.5),
-        legend.position = "top") 
-
-
-
 ## ----P-splines with random effects heterogeneous data--------------------
 
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
 
 fit = gam(Y ~ s(BMI,by = Treatment,bs="ps") +  s(Study,by =  dum,bs = "re"),
           family = binomial("logit"), data = df, nthreads = 8, method = "REML",  discrete=TRUE)
@@ -1429,8 +1394,6 @@ ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "P-splines with random effects",
-       caption = "Figure 3.") + 
   theme_bw()+ 
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -1450,7 +1413,7 @@ ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
 
 ## ----P-splines with random effects different range data------------------
 
-rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
 
 fit = gam(Y2 ~ s(BMI,by = Treatment,bs="ps") +  s(Study2,by = dum,bs = "re"),
           family = binomial("logit"), data = df, nthreads = 8, method = "REML")
@@ -1465,12 +1428,10 @@ preds$upper = preds$fit +1.96*preds$se.fit
 
 ## ----Plot of P-splines with random effects different range data----------
 
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+ggplot(df, aes(BMI, Y2, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  labs(title = "P-splines with random effects (different range data)",
-       caption = "Figure 3.") + 
   theme_bw()+ 
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
@@ -1489,7 +1450,7 @@ ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
 
 
 ## ----loading the datasets------------------------------------------------
-rm(list=ls())
+
 IPDMA <- read_sas("Data/IPDMA.sas7bdat")
 names(IPDMA) <- tolower(names(IPDMA))
 IPDMA$treat =  factor(IPDMA$treat  , labels = c("Placebo","Antibiotics") )
@@ -1506,11 +1467,13 @@ source("Data/somatostatin_descriptives.R")
 
 miniIPD= IPDMA%>% filter((study != "Little"))
 miniIPD$bilat_0 =  factor(miniIPD$bilat_0 , labels = c("Unilateral","Bilateral") )
-m1 <- bam(formula = poutcome ~ as.factor(study)+ treat*bilat_0*age + s(age,by = study)+
-            s(age, by = treat, bs="re") + 
-            s(treat,by = study, bs="re")+ s(age, by = study, bs="re"), 
+
+miniIPD$dum =  rep(1, dim(miniIPD)[1])
+
+m1 <- gam(formula = poutcome ~ treat*bilat_0*age + s(age,by = bilat_0, bs="tp")+
+            s(age, by = treat, bs="tp") + s(study, by = dum, bs="re"), 
           family = binomial("logit"), data = miniIPD, 
-          method="fREML" ,  discrete=TRUE)
+          method="REML")
 
 
 age =  vector()
@@ -1529,7 +1492,8 @@ for(i in unique(miniIPD$study)){
 new.dat = data.frame(study   = study,
                      treat   = as.factor(rep(x = unique(miniIPD$treat)  ,7810)),
                      bilat_0 = as.factor(rep(rep(x = unique(miniIPD$bilat_0),each =2)  ,3905)),
-                     age = age)
+                     age = age,
+                     dum = rep(1))
 
 
 #rm(age, study, i, l)

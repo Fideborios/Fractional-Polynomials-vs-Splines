@@ -198,7 +198,6 @@ df = df %>% mutate(Study = factor(Study, levels = c("1st Study","2nd Study",
 df = df %>% mutate(Study2 = factor(Study2, levels = c("1st Study","2nd Study",
                                              "3rd Study","4th Study", "5th Study" )))
 
-
 df$dum <- rep(1,dim(df)[1])
 source(file = "Functions/help functions.R")
 rm(noise,noise2)
@@ -355,17 +354,14 @@ For readability we adopt the following notation throughout our manuscript:
 
 ### 3.2.1 Functional shape determination using splines
 
-Splines may be considered as piece-wise polynomials constrained to be continuous in the whole range of a continuous co-variable. Three of the most commonly used splines are B-splines [@de_Boor_1978 ; @Dierckx_1993], smoothing splines and  P-splines [@Eilers_1996]. We present them throughout 3.2.1.1 - 3.2.1.3 sections. 
+Splines may be considered as piece-wise polynomials constrained to be continuous in the whole range of a continuous co-variable. Three of the most commonly used splines are B-splines [@de_Boor_1978 ; @Dierckx_1993], smoothing splines and P-splines [@Eilers_1996]. We present them throughout 3.2.1.1 - 3.2.1.3 sections. 
 
 #### 3.2.1.1  B-splines
-
 B-splines are piece-wise polynomials connected over the knots in order to be continuous. B-splines can be of any polynomial degree. For instance, linear B-splines consist of $\kappa$ linear pieces, quadratic of $\kappa$ quadratic pieces and cubic of $\kappa$ cubic pieces. Continuity can be achieved over a knot $\kappa$ by setting right and left limits to be equal $\lim_{x \to \kappa-} f(x_\kappa) = \lim_{x \to {\kappa+}} f(x_{\kappa})$. For smoothness we can set the d first derivatives to be also equal.
-
 
 The general statistical model for a B-spline of Q degree for each trial **j** is:
 
 $g^{-1}(\mu_j) = \sum_{k= 1}^\kappa \sum_{T=0}^1 \hat\alpha_{\kappa qTj} \times B_{\kappa qTj}(\mathbb{X};q)= fs_\mathbb{C}(\mathbb{X}) + fs_\mathbb{T}(\mathbb{X})$
-
 
 For a cubic spline the resulting piece-wise polynomial per trial would be:
 
@@ -373,11 +369,9 @@ $g^{-1}(\mu_j) = \beta_{0j\kappa} + \beta_{1j\kappa} \times \mathbb{X}  + \beta_
 
 The least squared objective function to minimise is $\mathbb{S} = [\sum_{i=1}^n \alpha_kB_k(\mathbb{X}_i)]^2$. Hereby, the knots may be either manually or through cross-validation defined.
 
-
-
 #### 3.2.1.2 Smoothing splines 
 
-An extension of the B-splines is smoothing splines (or smooth B-splines). Hereby, the number of knots are equal to the number of observations. In a sense, smoothing splines circumvent the problem of knot selection as they use all values of the continuous co-variable. However, in order to avoid over-fitting a penalty term $\lambda$ multiplied with the integral of the $d^{th}$ derivative of the basis function and introduced in the the objective function ($\int_{\mathbb{X}_{min}}^{\mathbb{X}_{max}} (a_q B^{(d)}(\mathbb{X}))^2$ ). Depending on the degree of the basis function the derivative can be of any degree. Nevertheless, O' Sullivan [@O_Sullivan_1986 ; @O_Sullivan_1988] suggested that Reinsch's [@Reinsch_1967] integral of the second derivative $\lambda \int(fs^{''}(\mathbb{X}))^2$ adequate for most smoothing problems. 
+An extension of the B-splines is smoothing splines (or smooth B-splines). Hereby, the number of knots are equal to the number of observations. In a sense, smoothing splines circumvent the problem of knot selection as they use all values of the continuous co-variable. However, in order to avoid over-fitting a penalty term $\lambda$ multiplied with the integral of the $d^{th}$ derivative of the basis function and introduced in the the objective function ($\int_{\mathbb{X}_{min}}^{\mathbb{X}_{max}} (a_q B^{(d)}(\mathbb{X}))^2$). Depending on the degree of the basis function the derivative can be of any degree. Nevertheless, O' Sullivan [@O_Sullivan_1986 ; @O_Sullivan_1988] suggested that Reinsch's [@Reinsch_1967] integral of the second derivative $\lambda \int(fs^{''}(\mathbb{X}))^2$ adequate for most smoothing problems. 
 
 The statistical model would be similar to the one of b-spline:
 $g^{-1}(\mu_j) = fs_{\mathbb{C}j}(\mathbb{X}) + fs_{\mathbb{T}j}(\mathbb{X})$
@@ -386,10 +380,7 @@ The only difference is that all observations are used and the objective function
 
 #### 3.2.1.3 P-splines
 
-P-splines proposed by Eilers and Marx penalise B-spline bases, but with a discrete penalty on the basis coefficients rather than penalising the objective function as smoothing spline do. The penalty is based on the differences of the coefficients of adjacent B-splines. *In simpler words they borrow some of the smoothness from nearby basis estimates $\alpha$*. Still a $\lambda$ penalty term is used for this goal, but the objective function to be minimised now is 
-
-
-This reduces the dimensionality to **m** (the number of the B-splines) rather than **n** the number of observations. We can still use a $\lambda$ parameter to control the smoothness of the fit. Although this penalty has no exact interpretation in terms of function shape, P-splines perform almost as well as conventional splines in many occasions, and can perform better in particular cases where it is advantageous to mix different orders of basis and penalty.
+P-splines proposed by Eilers and Marx are also penalised splines like smoothing splines. However, instead of penalising the objective function with $\lambda \int(fs^{''}(\mathbb{X}))^2$  they penalise it with the second-order difference $\lambda\sum_{k=3}^{K+4} (\Delta^2 \beta_\kappa)^2$, where $\Delta^2 \beta_\kappa = (\beta_\kappa - \beta_{\kappa-1}) - (\beta_{\kappa-1} - \beta_{\kappa-2}))$). *In simpler words they borrow some of the smoothness from nearby basis estimates $\alpha$*. This reduces the dimensionality from **n** (the number of observations) to **m** (the number of the B-splines). We can still use a $\lambda$ parameter to control the smoothness of the fit. Although this penalty has no exact interpretation in terms of function shape, P-splines perform almost as well as conventional splines in many occasions, and can perform better in particular cases where it is advantageous to mix different orders of basis and penalty.
 
 
 ### 3.2.2 Meta-analysis of individual participant data
@@ -1478,8 +1469,6 @@ Penalised cubic splines showed instability and were difficult to tune. Since we 
 
 ```{r B-splines with random effects heterogeneous data}
 #rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
-
-
 fit = gam(Y ~ bs(BMI,knots = c(min(df$BMI),20,25,30,35,max(df$BMI)))*Treatment +  
             s(Study,by =  dum,bs = "re"),
           family = binomial("logit"), data = df, nthreads = 8, method = "REML",  discrete=TRUE)
@@ -1493,7 +1482,7 @@ preds$upper = preds$fit +1.96*preds$se.fit
 ```
 
 ```{r Plot B-splines with random effects heterogeneous data}
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+ggplot(df, aes(BMI, Y, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
@@ -1533,7 +1522,7 @@ preds$upper = preds$fit +1.96*preds$se.fit
 ```
 
 ```{r Plot of B-splines with random effects different range data}
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+ggplot(df, aes(BMI, Y2, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
@@ -1574,12 +1563,10 @@ preds$upper = preds$fit +1.96*preds$se.fit
 ```
 
 ```{r Plot of smoothing splines with random effects heterogeneous data}
-
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+ggplot(df, aes(BMI, Y, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
-  theme_bw()+
   theme(plot.title    = element_text(hjust = 0.5,size = 26,face = "bold.italic"),
         plot.subtitle = element_text(hjust = 0.5,size = 18,face = "bold.italic"),
         axis.text.x.bottom  = element_text(angle = 0, vjust = 0.5, size=12),
@@ -1598,8 +1585,25 @@ ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
 
 `r fig_cap(13,caption = "Smoothing splines with random effects pooled fitted lines on $1^{st}$ IPD-set", display = "full") `
 
+```{r Smoothing splines with random effects different range data}
+#rm(list=ls()[! ls() %in% c("df","expit")]) ### To clear all enviroment besides the data-set
+
+df$dum <- rep(1,dim(df)[1])
+
+fit = gam(Y2 ~ s(BMI,by = Treatment,bs="tp") +  s(Study2,by =  dum,bs = "re"),
+          family = binomial("logit"), data = df, nthreads = 8, method = "REML",  discrete=TRUE)
+
+new.data = data.frame(cbind(df[,c("Study2","BMI","Treatment")],dum=rep(0,dim(df)[1])))
+preds=  predict.gam(fit, se.fit = T,newdata = new.data,newdata.guaranteed = T)
+
+
+preds$lower = preds$fit -1.96*preds$se.fit
+preds$upper = preds$fit +1.96*preds$se.fit
+```
+
+
 ```{r Plot of smoothing splines with random effects different range data}
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+ggplot(df, aes(BMI, Y2, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
@@ -1681,7 +1685,7 @@ preds$upper = preds$fit +1.96*preds$se.fit
 
 ```{r Plot of P-splines with random effects different range data}
 
-ggplot(df, aes(BMI, Y, linetype= Treatment)) + geom_point()+
+ggplot(df, aes(BMI, Y2, linetype= Treatment,color = Treatment)) + geom_point()+
     geom_line(aes(y = expit(preds$fit))) + 
   geom_ribbon(ymin = expit(preds$lower),ymax=expit(preds$upper),alpha=0.2)+ 
   ylab("Estimated Mortality risk") + scale_color_jama()+ 
@@ -1725,11 +1729,13 @@ source("Data/somatostatin_descriptives.R")
 
 miniIPD= IPDMA%>% filter((study != "Little"))
 miniIPD$bilat_0 =  factor(miniIPD$bilat_0 , labels = c("Unilateral","Bilateral") )
-m1 <- bam(formula = poutcome ~ as.factor(study)+ treat*bilat_0*age + s(age,by = study)+
-            s(age, by = treat, bs="re") + 
-            s(treat,by = study, bs="re")+ s(age, by = study, bs="re"), 
+
+miniIPD$dum =  rep(1, dim(miniIPD)[1])
+
+m1 <- gam(formula = poutcome ~ treat*bilat_0*age + s(age,by = bilat_0, bs="tp")+
+            s(age, by = treat, bs="tp") + s(study, by = dum, bs="re"), 
           family = binomial("logit"), data = miniIPD, 
-          method="fREML" ,  discrete=TRUE)
+          method="REML")
 
 
 age =  vector()
@@ -1748,7 +1754,8 @@ for(i in unique(miniIPD$study)){
 new.dat = data.frame(study   = study,
                      treat   = as.factor(rep(x = unique(miniIPD$treat)  ,7810)),
                      bilat_0 = as.factor(rep(rep(x = unique(miniIPD$bilat_0),each =2)  ,3905)),
-                     age = age)
+                     age = age,
+                     dum = rep(1))
 
 
 #rm(age, study, i, l)
