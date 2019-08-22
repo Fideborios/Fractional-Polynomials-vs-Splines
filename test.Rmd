@@ -21,16 +21,16 @@ header-includes:
   - \newcommand{\blandscape}{\begin{landscape}}
   - \newcommand{\elandscape}{\end{landscape}}
 output:
- word_document:
-  reference_docx: Style and bibliography/templatePaper.docx
- html_document:
-  df_print: paged
  pdf_document:
     fig_caption: yes
     fig_crop: no
     fig_height: 8
     fig_width: 6
     highlight: haddock
+ html_document:
+  df_print: paged
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
  indent: true  
 always_allow_html: yes
 csl: Style and bibliography/journal-of-clinical-epidemiology.csl
@@ -359,10 +359,7 @@ Splines may be considered as piece-wise polynomials constrained to be continuous
 
 #### 3.2.1.1  B-splines
 
-B-splines are piece-wise polynomials connected over the knots in order to be continuous. B-splines can be of any polynomial degree. For instance, linear B-splines consist of $\kappa$ linear pieces, quadratic of $\kappa$ quadratic pieces and cubic of $\kappa$ cubic pieces. Continuity can be achieved over a knot $\kappa$ by setting right and left limits to be equal $\lim_{x \to \kappa-} f(x_\kappa) = \lim_{x \to {\kappa+}} f(x_{\kappa})$. For smoothness we can set the d first derivatives to be also equal.
-
-
-The general statistical model for a B-spline of Q degree for each trial **j** is:
+B-splines are piece-wise polynomials connected over the knots in order to be continuous. Therefore, B-splines can be of any polynomial degree. For instance, linear B-splines consist of $\kappa$ linear pieces, quadratic of $\kappa$ quadratic pieces cubic of $\kappa$ qubic pieces etc. The general statistical model for a B-spline of Q degree for each trial **j** is:
 
 $g^{-1}(\mu_j) = \sum_{k= 1}^\kappa \sum_{T=0}^1 \hat\alpha_{\kappa qTj} \times B_{\kappa qTj}(\mathbb{X};q)= fs_\mathbb{C}(\mathbb{X}) + fs_\mathbb{T}(\mathbb{X})$
 
@@ -377,9 +374,9 @@ The least squared objective function to minimise is $\mathbb{S} = [\sum_{i=1}^n 
 
 #### 3.2.1.2 Smoothing splines 
 
-An extension of the B-splines is smoothing splines (or smooth B-splines). Hereby, the number of knots are equal to the number of observations. In a sense, smoothing splines circumvent the problem of knot selection as they use all values of the continuous co-variable. However, in order to avoid over-fitting a penalty term $\lambda$ multiplied with the integral of the $d^{th}$ derivative of the basis function and introduced in the the objective function ($\int_{\mathbb{X}_{min}}^{\mathbb{X}_{max}} (a_q B^{(d)}(\mathbb{X}))^2$ ). Depending on the degree of the basis function the derivative can be of any degree. Nevertheless, O' Sullivan [@O_Sullivan_1986 ; @O_Sullivan_1988] suggested that Reinsch's [@Reinsch_1967] integral of the second derivative $\lambda \int(fs^{''}(\mathbb{X}))^2$ adequate for most smoothing problems. 
+An extension of the B-splines is smoothing splines (or smooth B-splines). Hereby, the number of knots are equal to the number of observations. In a sense, smoothing splines circumvent the problem of knot selection as they use all values of the continuous co-variable. However, in order to avoid over-fitting a penalty term $\lambda$ multiplied with the integral of the $d^{th}$ derivatie of the basis function and introduced in the the objective function ($\int_{\mathbb{X}_{min}}^{\mathbb{X}_{max}} (a_q B^{(d)}(\mathbb{X}))^2$ ). Depending on the degree of the basis function the derivative can be of any degree. Nevertheless, O' Sullivan [@O_Sullivan_1986 ; @O_Sullivan_1988] suggested that Reinsch's [@Reinsch_1967] integral of the second derivative $\lambda \int(fs^{''}(\mathbb{X}))^2$ adequate for most smoothing problems. 
 
-The statistical model would be similar to the one of b-spline:
+The statistical model would be similar to the b-spline's:
 $g^{-1}(\mu_j) = fs_{\mathbb{C}j}(\mathbb{X}) + fs_{\mathbb{T}j}(\mathbb{X})$
 
 The only difference is that all observations are used and the objective function to be minimised is $\sum (y_i - fs(\mathbb{X}_i))^2 + \lambda \int(fs^{''}(\mathbb{X}))^2$, where $\lambda$ is a tuning parameter and $f(\mathbb{X}) = f_\mathbb{C}(\mathbb{X}) + f_\mathbb{T}(\mathbb{X})$ is the overall functional shape. 
