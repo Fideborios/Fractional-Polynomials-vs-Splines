@@ -1712,7 +1712,6 @@ ggplot(df, aes(BMI, Y2, linetype= Treatment,color = Treatment)) + geom_point()+
 ## 4.3 Empirical-data results
 
 ```{r loading the datasets}
-
 IPDMA <- read_sas("Data/IPDMA.sas7bdat")
 names(IPDMA) <- tolower(names(IPDMA))
 IPDMA$treat =  factor(IPDMA$treat  , labels = c("Placebo","Antibiotics") )
@@ -1721,12 +1720,9 @@ IPDMA$bilat_0 =  factor(IPDMA$bilat_0  , labels = c("No","Yes") )
 Tubano <- read_csv("Data/VolledigeDS.csv")
 somatostatin <- read_sav("Data/somatostatin.sav")
 source("Data/somatostatin_descriptives.R")
-
-
 ```
 
 ```{r Random effects smoothing splines}
-
 miniIPD= IPDMA%>% filter((study != "Little"))
 miniIPD$bilat_0 =  factor(miniIPD$bilat_0 , labels = c("Unilateral","Bilateral") )
 
@@ -1790,7 +1786,6 @@ ggplot(miniIPD, aes(x = age, y = poutcome, linetype = treat, color = study) )+
 ```
 
 ```{r}
-
 ## Re-calculate the 95% CIs
 m1.pred$low  = with(m1.pred, expit(fit-1.96*se.fit)) ; 
 m1.pred$high = with(m1.pred, expit(fit+1.96*se.fit))
