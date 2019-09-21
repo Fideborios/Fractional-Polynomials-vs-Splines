@@ -1,0 +1,119 @@
+---
+title: 'A comparison of Fractional polynomials, meta-STEPP and smoothing splines to investigate effect modification in IPD-MA : a simulation study'
+author: "Michail Belias"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+header-includes:
+  - \usepackage{bbm}
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{dsfont}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \newcommand{\blandscape}{\begin{landscape}}
+  - \newcommand{\elandscape}{\end{landscape}}
+  - \DeclareUnicodeCharacter{2212}{-}
+output:
+ pdf_document:
+    fig_caption: yes
+    fig_crop: no
+    fig_height: 8
+    fig_width: 6
+    highlight: haddock
+    pandoc_args: -Fpandoc-crossref
+ html_document:
+  df_print: paged
+ word_document:
+  reference_docx: Style and bibliography/templatePaper.docx
+  pandoc_args: -Fpandoc-crossref
+ indent: true  
+always_allow_html: yes
+link-citations: true
+csl: Style and bibliography/journal-of-clinical-epidemiology.csl
+sansfont : GFS Neohellenic
+bibliography: Style and bibliography/bibliography2.bib
+---
+
+
+
+
+# Abstract
+
+## Introduction
+
+Individual participant data (IPD) meta-analysis (MA) offer great opportunities, such as to simultaneously investigate effect modification while also modelling for potential non-linear association between the outcome and the effect modifier. Several regression based approaches have been proposed such as fractional polynomials, meta-STEPP and splines. 
+
+## Objective
+
+Our objective is to compare their properties and their precision to investigate effect modification in IPD-MA.  
+
+## Methods
+
+To that goal we first describe the aforementioned methods. Subsequently, we conduct a simulation study covering 3 distinct scenarios. All scenarios consist of 5 studies with 200 participants each and equal treatment allocation reflecting the design of a randomised clinical trial. In the first scenario we introduced heterogeneity but the domain of the continuous effect modifier was the same across the studies. In the second scenario we introduced heterogeneity and the the domain of the continuous effect modifier was the different across the studies, while in the third scenario we added ecological bias.
+
+
+## Results
+
+
+## Conclusions
+
+
+
+\newpage
+
+# Introduction 
+
+
+Individual participant data (IPD) meta-analysis (MA) is well established as the gold standard to synthesize evidence from multiple studies [@Riley_2010a ; @Riley_2010b]. IPD-MA offers great opportunities and showed great increase over the last decades [@Simmonds_2015]. Two opportunities that can be addressed in IPD-MA is the investigation of effect modification and modelling non-linear associations with the outcome. Estimating the real underlying functional shape between the outcome and a continuous variable is an important task, as failing to do so may lead to biased results and subsequently biased conclusions. Therefore, a plethora of modelling approaches have been proposed such as fractional polynomials, splines and sliding window techniques. Most of these approaches have been initially developed in a single studies and extended in multi-level schemes to account for the within study clustering of the participants. The aforementioned approaches can be classified in two categories. Fractional polynomials is a **global** method, while splines and sliding windows approaches are  **fragmented** methods. 
+
+One of the first attempts to extent linear models to account non-linearities was polynomial regression approach. Hereby, powers of the continuous variable higher than one (linear) are generated and regressed with the outcome. Different degree polynomials are typically compared using tests such as likelihood ratio and Wald test or criteria such as AIC and BIC. Fractional polynomials [@Royston_1994 ; @Royston_2004] use the same approach as polynomial regression, but the powers that can be used come from a specific set $S: [-2; -1; -0:5; 0; 0:5; 1; 2; 3]$. Note that FPs introduce also negative powers, which offers great modeling capability. In our manuscript, we will not adress polynomial regression, as we believe that they are covered by fractional polynomials due to their similarity.
+
+Splines are based on piece-wise polynomials. Although, a wide variety of methods has has been developed splines are generally considered semi-parametric. Nevertheless, some approaches tend to be more parametrica than others. As the term piece-wise implies the independent variables are splitted into sub-domains. The cut points for these splits are often called knots and the domains within each knot intervals. Note that simply fitting a polynomial within two adjacent interval, would produce discontinuous fitted lines. Therefore, splines are constrained to be continuous and in most approaches smooth over the knots. Splines can be classified in two categories **regression splines** and **penalised splines**. The most commonly used **regression splines** are restricted splines [cit] and B-splines [@de_Boor_1978 ; @Dierckx_1993]. On the other hand, the most commonly used **penalised splines** are smoothing splines [@Best_1994] and p-splines [@Eilers_1996].  
+
+Sliding window - often called moving average or moving regression- are non-parametric approaches, as they make no distributional assumptions.  As the term sliding window implies, hereby, we focus in small subsets of data starting from the lowest value of the continuous variable and gradually reaching the highest. These small subsets are often called windows and the distance between the two consequent windows is called sliding step. The most common of sliding window approaches are Locally Weighted Scatterplot Smoothing (lowess) and Subpopulation Treatment Effect Pattern Plot (STEPP)[@Yip_2016]. 
+
+All aforementioned modelling approaches have been also extended to meta-analysis. In general IPD-MA may be applied either in one-stage or two-stage. In two-stage IPD-MA, we may apply per study a statistical model of choice and then extract either 1) the estimated coefficients along with their standard errors or 2) their fitted lines along with their 95% confidence bands. Subsequently, we pool them with multivariate meta-analysis [@Berkeley_1996] or point-wise meta-analysis [@Sauerbrei_2011]. Apparently, methods that don't provide coefficients can not use this multi-variate meta-analysis. Furthermore, another limitation for this approach is that it may be applied only whenever the domain of the continuous variable is approximately common between studies. On the other hand, point-wise meta-analysis can be applied in both cases. Nevertheless, in scenarios where the domain of the independent variable is different point-wise meta-analysis may provide jagged fitted lines and confidence intervals. On the other hand, in one-stage meta-analysis a typically a mixed-effects model is applied to account for within study clustering of the participants. This way we assume that the coefficients and/or the fitted lines come from a higher distribution and they are different across studies due to randomness. 
+
+Little is known about the properties of the aforementioned techniques. To address that we perform a simulation study with three types of response and in three different scenarios to reflect multi-level structures that are typically encountered in practise. As the performance of each method is highly dependent on the simulated functional shape we do not expect to find a single technique that outperforms all other in every case. Instead, our goal is to provide guidance on choosing the approach that fits best a given occasion. 
+Our manuscript is organised as follows. In section 2 we describe the simulated scenarios and explain the simulation design and the performance measures we used. In section 3, we describe the aforementioned approaches and in section 4 we provide their results. Section 5 contains discussion and our conclusions.
+
+
+# 2. Simulation
+
+
+
+
+# 3. Methods
+
+# 4. Results
+
+# 5. Discussion and conclusions
+
+
+
+
+#
+
+\newpage
+# References
+
+
+
+
+
+
+
+
+
+
+
+
+
