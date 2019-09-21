@@ -49,11 +49,11 @@ bibliography: Style and bibliography/bibliography2.bib
 
 ## Introduction
 
-Individual participant data (IPD) meta-analysis (MA) offer great opportunities, such as to simultaneously investigate effect modification while also modelling for potential non-linear association between the outcome and the effect modifier. Several regression based approaches have been proposed such as fractional polynomials, meta-STEPP and splines. 
+Individual participant data (IPD) meta-analysis (MA) offer great opportunities, such as to simultaneously investigate effect modification while also modelling for potential non-linear association between the outcome and the effect modifier. Several approaches have been proposed such as fractional polynomials, meta-STEPP and splines. 
 
 ## Objective
 
-Our objective is to compare their properties and their precision to investigate effect modification in IPD-MA.  
+Our objective is to compare properties and precision of the aforementioned approaches to investigate effect modification in IPD-MA.  
 
 ## Methods
 
@@ -82,16 +82,76 @@ Sliding window - often called moving average or moving regression- are non-param
 
 All aforementioned modelling approaches have been also extended to meta-analysis. In general IPD-MA may be applied either in one-stage or two-stage. In two-stage IPD-MA, we may apply per study a statistical model of choice and then extract either 1) the estimated coefficients along with their standard errors or 2) their fitted lines along with their 95% confidence bands. Subsequently, we pool them with multivariate meta-analysis [@Berkeley_1996] or point-wise meta-analysis [@Sauerbrei_2011]. Apparently, methods that don't provide coefficients can not use this multi-variate meta-analysis. Furthermore, another limitation for this approach is that it may be applied only whenever the domain of the continuous variable is approximately common between studies. On the other hand, point-wise meta-analysis can be applied in both cases. Nevertheless, in scenarios where the domain of the independent variable is different point-wise meta-analysis may provide jagged fitted lines and confidence intervals. On the other hand, in one-stage meta-analysis a typically a mixed-effects model is applied to account for within study clustering of the participants. This way we assume that the coefficients and/or the fitted lines come from a higher distribution and they are different across studies due to randomness. 
 
-Little is known about the properties of the aforementioned techniques. To address that we perform a simulation study with three types of response and in three different scenarios to reflect multi-level structures that are typically encountered in practise. As the performance of each method is highly dependent on the simulated functional shape we do not expect to find a single technique that outperforms all other in every case. Instead, our goal is to provide guidance on choosing the approach that fits best a given occasion. 
-Our manuscript is organised as follows. In section 2 we describe the simulated scenarios and explain the simulation design and the performance measures we used. In section 3, we describe the aforementioned approaches and in section 4 we provide their results. Section 5 contains discussion and our conclusions.
+Little is known about the properties of the aforementioned techniques. To address that, we perform a simulation study with continuous response in three different scenarios that reflect multi-level structures typically encountered in practise. As the performance of each method is highly dependent on the simulated functional shape we do not expect to find a single technique that outperforms all other in every case. Instead, our goal is to provide guidance on choosing the approach that fits best a given occasion. 
+Our manuscript is organised as follows. In section 2 we describe the simulated scenarios and explain the IPD design and the performance measures used to . In section 3, we describe the aforementioned approaches and in section 4 we provide their results. Section 5 contains discussion and our conclusions.
 
 
-# 2. Simulation
+# 2. IPD simulation 
 
+## 2.1 
+
+We describe three distinct scenarios commonly present in research practise. All scenarios consist of 5 studies with 200 participants each and equal treatment allocation reflecting the design of a randomised clinical trial.  The functional shape resembles a U-shaped association 
+
+
+
+
+
+
+In the first scenario we introduce heterogeneity but the domain of the continuous effect modifier was the same across the studies. 
+
+
+
+
+
+
+
+
+In the second scenario we introduced heterogeneity and the the domain of the continuous effect modifier was the different across the studies, while in the third scenario we added ecological bias. 
+
+
+
+
+
+
+
+
+
+## Perfomance measurement
+
+We calculated the mean prediction error of our approaches and 
 
 
 
 # 3. Methods
+
+## Fractional Polynomials
+
+Royston and Altman [@Royston_1994] proposed a multi-variable fractional polynomial procedure (MFP) in order to detect the best fitting fractional polynomial including also interactions [@Royston_2004]  between binary variables such as treatments and continuous co-variables. In a subsequent article, Sauerbrei and Royston [@Sauerbrei_2011] extended fractional polynomials for IPD-MA, proposing a two-stage approach. 
+
+
+Their suggested algorithm is as follows:
+
+* 
+* A fractional polynomial per trial is applied 
+
+
+
+
+
+
+* Method 1: Overall FP
+* Method 2: Studywise FP2
+* Method 3: Studywise selected FP
+
+
+
+
+
+
+
+First an appropriate statistical model is fitted per trial and either the estimated coefficients with their standard errors or the treatment effect functions with their 95% confidence intervals are extracted. On a second stage, these estimates are pooled using either multivariate or point-wise meta-analysis respectively. Nevertheless,their two-stage approach may be prone to power loss when IPD-set with limited observations are included and the outcome is binary [@Debray_2015]  or when the means of the continuous effect modifier is highly heterogeneous over the trials [@Simmonds_2007]. Furthermore, both the trial and error approach and the fractional polynomial approach rely on statistical tests with arbitrary $\alpha$ significance levels. Further, they estimate global functions which may not fit well on the boundaries of a continuous effect modifier. For instance, using the previous example, the regression model for BMI and mortality may on average fit well, using regression models with quadratic terms, but the fit may not be adequate for extreme cases such as underweight (BMI <18.5) and severely obese (BMI>40) participants. Splitting the BMI into 3 intervals [<18.5 , 18.5-40 , 40+] and fitting a model within each interval could provide a better fit, but the resulting piece-wise functional shapes will probably be discontinuous on the knots (18.5, 40). Therefore, piece-wise approaches are usually combined with smoothing techniques in order to result in continuous functional shapes.
+
+
 
 # 4. Results
 
